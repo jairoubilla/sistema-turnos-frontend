@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   preview: {
     allowedHosts: [
-      'sistema-turnos-frontend-production.up.railway.app'
+      'aiturnos.up.railway.app'
     ],
     host: true,
     port: 4173
