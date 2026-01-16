@@ -192,7 +192,8 @@ function App() {
                 </button>
               </td>
               <td>
-                <a href={'https://wa.me/${t.telefono_paciente}?text=Hola%20${t.paciente,%20te%20recordamos%20tu%20turno%20el%20día%20${t.fecha}%20a%20las%20${t.hora}.'}
+                <a
+                href={`https://wa.me/${t.telefono}?text=Hola%20${t.paciente},%20te%20recordamos%20tu%20turno%20el%20día%20${t.fecha}%20a%20las%20${t.hora}`}
                 target='_blank'
                 rel='noreferrer'
                 style={{backgroundColor: '#25D366', color: 'white', padding: '5px 10px', borderRadius: '5px', textDecoration: 'none'}}
