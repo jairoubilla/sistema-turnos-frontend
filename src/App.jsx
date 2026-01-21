@@ -349,3 +349,5 @@ const formStyle = {
   marginBottom: '20px', 
   flexWrap: 'wrap' 
 };
+
+export default App;
