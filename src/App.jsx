@@ -92,22 +92,32 @@ function App() {
   // ==========================================
   // 4. FUNCIONES DE GESTIÓN (MÉDICOS)
   // ==========================================
-  const guardarMedico = async (e) => {
-    e.preventDefault();
+  // Función para Médicos
+const guardarMedico = async (e) => {
+  e.preventDefault();
+  // Forzamos que los nombres de los campos coincidan con el Schema de Python
+  const datosParaEnviar = {
+    nombre: nuevoMedico.nombre,
+    especialidad: nuevoMedico.especialidad,
+    matricula: nuevoMedico.matricula,
+    telefono: nuevoMedico.telefono
+  };
+
+  try {
     const url = 'https://sisteme-turnos-backend-production.up.railway.app/medicos';
-    try {
-      if (nuevoMedico.id) {
-        await axios.put(`${url}/${nuevoMedico.id}`, nuevoMedico);
-        alert("Médico actualizado");
-      } else {
-        await axios.post(url, nuevoMedico);
-        alert("Médico registrado");
-      }
-      setNuevoMedico({ id: null, nombre: '', especialidad: '', telefono: '', matricula: '' });
-      obtenerDatos();
-    // eslint-disable-next-line no-unused-vars
-    } catch (err) { alert("Error al procesar médico") }
+    if (nuevoMedico.id) {
+      await axios.put(`${url}/${nuevoMedico.id}`, datosParaEnviar);
+    } else {
+      await axios.post(url, datosParaEnviar);
+    }
+    alert("Médico procesado con éxito");
+    setNuevoMedico({ id: null, nombre: '', especialidad: '', telefono: '', matricula: '' });
+    obtenerDatos();
+  } catch (err) {
+    console.error("Error detallado:", err.response?.data);
+    alert("Error al procesar médico: " + JSON.stringify(err.response?.data));
   }
+};
 
   const eliminarMedico = async (id) => {
     if (window.confirm("¿Eliminar este médico?")) {
