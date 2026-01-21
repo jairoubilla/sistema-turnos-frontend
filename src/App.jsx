@@ -78,14 +78,38 @@ function App() {
   }
 
   const guardarTurno = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.post('https://sisteme-turnos-backend-production.up.railway.app/turnos', nuevoTurno);
-      alert("¡Turno agendado con éxito!");
-      setNuevoTurno({ paciente_id: '', medico_id: '', fecha: '', hora: '', motivo: '' });
-      obtenerDatos();
-    } catch (err) { alert("Error al agendar: Verifica disponibilidad") }
-  }
+      e.preventDefault();
+
+      // 1. Validamos que tengamos un paciente cargado
+      if (!pacienteEncontrado) {
+        alert("Error: No se detectó la sesión del paciente. Por favor, vuelve a ingresar.");
+        return;
+      }
+
+      // 2. Creamos una copia del turno asegurando que el paciente_id sea el correcto
+      const datosParaEnviar = {
+        ...nuevoTurno,
+        paciente_id: pacienteEncontrado.id // Forzamos el ID del paciente que hizo login
+      };
+
+      try {
+        // 3. Enviamos los datos completos al servidor
+        await axios.post('https://sisteme-turnos-backend-production.up.railway.app/turnos', datosParaEnviar);
+      
+        alert("¡Turno agendado con éxito!");
+      
+        // Limpiamos el formulario para el próximo turno
+        setNuevoTurno({ paciente_id: '', medico_id: '', fecha: '', hora: '', motivo: '' });
+      
+        // Refrescamos la lista de turnos y las estadísticas
+        obtenerDatos(); 
+      
+      } catch (err) { 
+        // Si falla, mostramos el error real del servidor en la consola
+        console.error("Detalle del error:", err.response?.data);
+        alert("Error al agendar: " + (err.response?.data?.error || "Verifica la disponibilidad del horario"));
+      }
+    }
 
   const eliminarTurno = async (id) => {
     if (window.confirm("¿Eliminar este turno?")) {
