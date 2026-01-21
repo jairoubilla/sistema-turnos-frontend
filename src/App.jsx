@@ -152,12 +152,18 @@ const guardarMedico = async (e) => {
   }
 
   const actualizarEstadoTurno = async (id, nuevoEstado) => {
-    try {
-      await axios.put(`https://sisteme-turnos-backend-production.up.railway.app/turnos/${id}`, { estado: nuevoEstado });
-      obtenerDatos();
-    // eslint-disable-next-line no-unused-vars
-    } catch (err) { alert("Error al cambiar estado") }
+  try {
+    // Enviamos el nuevo estado al endpoint PUT de turnos que ya configuramos
+    await axios.put(`https://sisteme-turnos-backend-production.up.railway.app/turnos/${id}`, { 
+      estado: nuevoEstado 
+    });
+    alert("Estado actualizado");
+    obtenerDatos(); // Recarga la lista para ver el cambio reflejado
+  } catch (err) {
+    console.error("Error al cambiar estado:", err.response?.data);
+    alert("No se pudo cambiar el estado.");
   }
+};
 
   const eliminarTurno = async (id) => {
     if (window.confirm("¿Eliminar turno?")) {
@@ -347,11 +353,11 @@ const guardarMedico = async (e) => {
                 </div>
                 <div style={{ backgroundColor: '#2a2a2a', padding: '20px', borderRadius: '15px' }}>
                   <h3>Mis Turnos</h3>
-                  {turnos.filter(t => t.paciente_id === pacienteEncontrado?.id).map(t => (
+                  {turnos.filter(t => Number(t.paciente_id) === Number(pacienteEncontrado?.id)).map(t => (
                     <div key={t.id} style={{ borderLeft: '4px solid #4CAF50', padding: '10px', backgroundColor: '#333', marginBottom: '10px' }}>
                       <p><b>{t.fecha} - {t.hora}hs</b></p>
                       <p>Dr. {t.medico}</p>
-                      <p style={{fontSize:'12px', color: '#4CAF50'}}>{t.estado}</p>
+                      <p style={{fontSize:'12px', color: '#4CAF50', fontWeight: 'bold'}}>Estado: {t.estado || 'Pendiente'}</p>
                     </div>
                   ))}
                 </div>
