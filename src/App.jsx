@@ -41,6 +41,7 @@ function App() {
     } catch (err) { console.error("Error al cargar datos", err) }
   }
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { obtenerDatos() }, []);
 
   // ==========================================
@@ -60,6 +61,7 @@ function App() {
       setNuevoPaciente({ id: null, nombre: '', dni: '', telefono: '' });
       setMostrarRegistro(false);
       obtenerDatos();
+    // eslint-disable-next-line no-unused-vars
     } catch (err) { alert("Error al procesar paciente") }
   }
 
@@ -68,6 +70,7 @@ function App() {
       try {
         await axios.delete(`https://sisteme-turnos-backend-production.up.railway.app/pacientes/${id}`);
         obtenerDatos();
+      // eslint-disable-next-line no-unused-vars
       } catch (err) { alert("Error al eliminar") }
     }
   }
@@ -88,6 +91,7 @@ function App() {
       }
       setNuevoMedico({ id: null, nombre: '', especialidad: '', telefono: '', matricula: '' });
       obtenerDatos();
+    // eslint-disable-next-line no-unused-vars
     } catch (err) { alert("Error al procesar médico") }
   }
 
@@ -96,6 +100,7 @@ function App() {
       try {
         await axios.delete(`https://sisteme-turnos-backend-production.up.railway.app/medicos/${id}`);
         obtenerDatos();
+      // eslint-disable-next-line no-unused-vars
       } catch (err) { alert("Error al eliminar") }
     }
   }
@@ -126,6 +131,7 @@ function App() {
     try {
       await axios.put(`https://sisteme-turnos-backend-production.up.railway.app/turnos/${id}`, { estado: nuevoEstado });
       obtenerDatos();
+    // eslint-disable-next-line no-unused-vars
     } catch (err) { alert("Error al cambiar estado") }
   }
 
@@ -134,6 +140,7 @@ function App() {
       try {
         await axios.delete(`https://sisteme-turnos-backend-production.up.railway.app/turnos/${id}`);
         obtenerDatos();
+      // eslint-disable-next-line no-unused-vars
       } catch (err) { alert("Error al borrar") }
     }
   }
@@ -270,21 +277,24 @@ function App() {
               {/* VISTA MÉDICOS (MODIFICAR Y ELIMINAR) */}
               {vista === 'medicos' && (
                 <section>
-                  <h3>Gestión de Médicos</h3>
+                  <h3>Gestión de Staff Médico</h3>
                   <form onSubmit={guardarMedico} style={formStyle}>
-                    <input placeholder="Nombre" style={inputStyle} value={nuevoMedico.nombre} onChange={(e)=>setNuevoMedico({...nuevoMedico, nombre: e.target.value})} />
-                    <input placeholder="Especialidad" style={inputStyle} value={nuevoMedico.especialidad} onChange={(e)=>setNuevoMedico({...nuevoMedico, especialidad: e.target.value})} />
-                    <button type="submit" style={{backgroundColor:'#4CAF50', color:'white', padding:'10px'}}>{nuevoMedico.id ? 'Actualizar' : 'Añadir'}</button>
+                    <input placeholder="Nombre" style={inputStyle} value={nuevoMedico.nombre} onChange={(e)=>setNuevoMedico({...nuevoMedico, nombre: e.target.value})} required />
+                    <input placeholder="Especialidad" style={inputStyle} value={nuevoMedico.especialidad} onChange={(e)=>setNuevoMedico({...nuevoMedico, especialidad: e.target.value})} required />
+                    <input placeholder="Matrícula" style={inputStyle} value={nuevoMedico.matricula} onChange={(e)=>setNuevoMedico({...nuevoMedico, matricula: e.target.value})} required />
+                    <input placeholder="Teléfono" style={inputStyle} value={nuevoMedico.telefono} onChange={(e)=>setNuevoMedico({...nuevoMedico, telefono: e.target.value})} required />
+                    <button type="submit" style={btnLarge}>{nuevoMedico.id ? 'Actualizar Médico' : 'Añadir Médico'}</button>
+                    {nuevoMedico.id && <button onClick={()=>setNuevoMedico({id:null, nombre:'', especialidad:'', telefono:'', matricula:''})}>Cancelar</button>}
                   </form>
                   <table border="1" style={tableStyle}>
-                    <thead><tr><th>Nombre</th><th>Especialidad</th><th>Acciones</th></tr></thead>
+                    <thead><tr><th>Médico</th><th>Especialidad</th><th>Matrícula</th><th>Acciones</th></tr></thead>
                     <tbody>
                       {medicos.map(m => (
                         <tr key={m.id}>
-                          <td>{m.nombre}</td><td>{m.especialidad}</td>
+                          <td>{m.nombre}</td><td>{m.especialidad}</td><td>{m.matricula}</td>
                           <td>
-                            <button onClick={() => setNuevoMedico(m)} style={{color:'orange', marginRight:'10px'}}>Editar</button>
-                            <button onClick={() => eliminarMedico(m.id)} style={{color:'red'}}>Borrar</button>
+                            <button onClick={() => setNuevoMedico(m)} style={{color:'orange', marginRight:'10px', background:'none', border:'none', cursor:'pointer'}}>Editar</button>
+                            <button onClick={() => eliminarMedico(m.id)} style={{color:'red', background:'none', border:'none', cursor:'pointer'}}>Borrar</button>
                           </td>
                         </tr>
                       ))}
