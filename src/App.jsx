@@ -48,22 +48,36 @@ function App() {
   // 3. FUNCIONES DE GESTIÓN (PACIENTES)
   // ==========================================
   const guardarPaciente = async (e) => {
-    e.preventDefault();
-    const url = 'https://sisteme-turnos-backend-production.up.railway.app/pacientes';
-    try {
-      if (nuevoPaciente.id) {
-        await axios.put(`${url}/${nuevoPaciente.id}`, nuevoPaciente);
-        alert("Paciente actualizado");
-      } else {
-        await axios.post(url, nuevoPaciente);
-        alert("Paciente registrado");
-      }
-      setNuevoPaciente({ id: null, nombre: '', dni: '', telefono: '' });
-      setMostrarRegistro(false);
-      obtenerDatos();
-    // eslint-disable-next-line no-unused-vars
-    } catch (err) { alert("Error al procesar paciente") }
+  e.preventDefault();
+  
+  // Limpiamos los datos para enviar solo lo que el Schema espera
+  const datosLimpios = {
+    nombre: nuevoPaciente.nombre,
+    dni: nuevoPaciente.dni,
+    telefono: nuevoPaciente.telefono
+  };
+
+  const urlBase = 'https://sisteme-turnos-backend-production.up.railway.app/pacientes';
+  
+  try {
+    if (nuevoPaciente.id) {
+      await axios.put(`${urlBase}/${nuevoPaciente.id}`, datosLimpios);
+      alert("Paciente actualizado");
+    } else {
+      await axios.post(urlBase, datosLimpios);
+      alert("¡Paciente registrado con éxito!");
+    }
+    
+    // Limpieza de estados
+    setNuevoPaciente({ id: null, nombre: '', dni: '', telefono: '' });
+    setMostrarRegistro(false);
+    obtenerDatos(); // Esto actualiza la lista en el Admin
+  } catch (err) {
+    // Si falla, esto te dirá EXACTAMENTE qué campo está mal en la consola (F12)
+    console.error("Error del servidor:", err.response?.data);
+    alert("Error: " + JSON.stringify(err.response?.data || "Problema de conexión"));
   }
+};
 
   const eliminarPaciente = async (id) => {
     if (window.confirm("¿Eliminar este paciente? Esto podría borrar sus turnos.")) {
