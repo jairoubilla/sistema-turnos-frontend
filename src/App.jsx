@@ -60,6 +60,16 @@ function App() {
     } catch (err) { alert("Error en paciente") }
   };
 
+  const eliminarPaciente = async (id) => {
+    if (window.confirm("¿Eliminar este paciente?")) {
+      try {
+        await axios.delete(`https://sisteme-turnos-backend-production.up.railway.app/pacientes/${id}`);
+        obtenerDatos();
+      // eslint-disable-next-line no-unused-vars
+      } catch (err) { alert("Error al eliminar") }
+    }
+  };
+
   const guardarMedico = async (e) => {
     e.preventDefault();
     const datosParaEnviar = { nombre: nuevoMedico.nombre, especialidad: nuevoMedico.especialidad, matricula: nuevoMedico.matricula, telefono: nuevoMedico.telefono };
@@ -72,6 +82,16 @@ function App() {
       obtenerDatos();
     // eslint-disable-next-line no-unused-vars
     } catch (err) { alert("Error en médico") }
+  };
+
+  const eliminarMedico = async (id) => {
+    if (window.confirm("¿Eliminar este médico?")) {
+      try {
+        await axios.delete(`https://sisteme-turnos-backend-production.up.railway.app/medicos/${id}`);
+        obtenerDatos();
+      // eslint-disable-next-line no-unused-vars
+      } catch (err) { alert("Error al eliminar") }
+    }
   };
 
   const guardarTurno = async (e) => {
@@ -212,83 +232,26 @@ function App() {
 
               {vista === 'pacientes' && (
                 <section>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                     <h3>Gestión de Pacientes</h3>
-                    {/* BUSCADOR DE PACIENTES */}
-                    <input 
-                      placeholder="🔍 Buscar por nombre o DNI..." 
-                      style={{ ...inputStyle, width: '250px' }} 
-                      onChange={(e) => setBusquedaAdmin(e.target.value)} 
-                    />
+                    <input placeholder="🔍 Buscar..." style={{ ...inputStyle, width: '250px' }} onChange={(e) => setBusquedaAdmin(e.target.value)} />
                   </div>
-    
-                  {/* Formulario que sirve para CREAR y para EDITAR */}
                   <form onSubmit={guardarPaciente} style={formStyle}>
-                    <input 
-                      placeholder="Nombre" 
-                      style={inputStyle} 
-                      value={nuevoPaciente.nombre} 
-                      onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, nombre: e.target.value })} 
-                      required 
-                    />
-                    <input 
-                      placeholder="DNI" 
-                      style={inputStyle} 
-                      value={nuevoPaciente.dni} 
-                      onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, dni: e.target.value })} 
-                      required 
-                    />
-                    <input 
-                      placeholder="Teléfono" 
-                      style={inputStyle} 
-                      value={nuevoPaciente.telefono} 
-                      onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, telefono: e.target.value })} 
-                      required 
-                    />
-                    <button type="submit" style={{ backgroundColor: '#4CAF50', color: 'white', padding: '10px', borderRadius: '8px', cursor: 'pointer', border: 'none' }}>
-                      {nuevoPaciente.id ? '💾 Actualizar' : '➕ Añadir'}
-                    </button>
-      
-                    {/* Botón para cancelar edición y limpiar el formulario */}
-                    {nuevoPaciente.id && (
-                      <button 
-                        onClick={() => setNuevoPaciente({ id: null, nombre: '', dni: '', telefono: '' })}
-                        style={{ backgroundColor: '#444', color: 'white', padding: '10px', marginLeft: '5px', borderRadius: '8px', border: 'none' }}
-                      >
-                        Cancelar
-                      </button>
-                    )}
+                    <input placeholder="Nombre" style={inputStyle} value={nuevoPaciente.nombre} onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, nombre: e.target.value })} required />
+                    <input placeholder="DNI" style={inputStyle} value={nuevoPaciente.dni} onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, dni: e.target.value })} required />
+                    <input placeholder="WhatsApp" style={inputStyle} value={nuevoPaciente.telefono} onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, telefono: e.target.value })} required />
+                    <button type="submit" style={btnLarge}>{nuevoPaciente.id ? '💾 Actualizar' : '➕ Añadir'}</button>
+                    {nuevoPaciente.id && <button type="button" onClick={() => setNuevoPaciente({ id: null, nombre: '', dni: '', telefono: '' })} style={{ marginLeft: '10px' }}>Cancelar</button>}
                   </form>
-
                   <table border="1" style={tableStyle}>
-                    <thead>
-                      <tr>
-                        <th>Nombre</th>
-                        <th>DNI</th>
-                        <th>Teléfono</th>
-                        <th>Acciones</th>
-                      </tr>
-                    </thead>
+                    <thead><tr><th>Nombre</th><th>DNI</th><th>Acciones</th></tr></thead>
                     <tbody>
-                      {pacientes.map(p => (
+                      {pacientes.filter(p => p.nombre.toLowerCase().includes(busquedaAdmin.toLowerCase()) || p.dni.includes(busquedaAdmin)).map(p => (
                         <tr key={p.id}>
-                          <td>{p.nombre}</td>
-                          <td>{p.dni}</td>
-                          <td>{p.telefono}</td>
+                          <td>{p.nombre}</td><td>{p.dni}</td>
                           <td>
-                            <button 
-                              onClick={() => setNuevoPaciente(p)} 
-                              style={{ color: 'orange', marginRight: '10px', background: 'none', border: 'none', cursor: 'pointer' }}
-                            >
-                              ✏️ Editar
-                            </button>
-                            <button 
-                              // eslint-disable-next-line no-undef
-                              onClick={() => eliminarPaciente(p.id)} 
-                              style={{ color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}
-                            >
-                              🗑️ Borrar
-                            </button>
+                            <button onClick={() => setNuevoPaciente(p)} style={{ color: 'orange', marginRight: '10px', background: 'none', border: 'none', cursor: 'pointer' }}>✏️ Editar</button>
+                            <button onClick={() => eliminarPaciente(p.id)} style={{ color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}>🗑️ Borrar</button>
                           </td>
                         </tr>
                       ))}
@@ -299,13 +262,32 @@ function App() {
 
               {vista === 'medicos' && (
                 <section>
-                  <h3>Gestión Médicos</h3>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                    <h3>Gestión Médicos</h3>
+                    <input placeholder="🔍 Buscar..." style={{ ...inputStyle, width: '250px' }} onChange={(e) => setBusquedaAdmin(e.target.value)} />
+                  </div>
                   <form onSubmit={guardarMedico} style={formStyle}>
                     <input placeholder="Nombre" style={inputStyle} value={nuevoMedico.nombre} onChange={(e) => setNuevoMedico({ ...nuevoMedico, nombre: e.target.value })} required />
                     <input placeholder="Especialidad" style={inputStyle} value={nuevoMedico.especialidad} onChange={(e) => setNuevoMedico({ ...nuevoMedico, especialidad: e.target.value })} required />
                     <input placeholder="Matrícula" style={inputStyle} value={nuevoMedico.matricula} onChange={(e) => setNuevoMedico({ ...nuevoMedico, matricula: e.target.value })} required />
-                    <button type="submit" style={btnLarge}>Añadir</button>
+                    <input placeholder="Teléfono" style={inputStyle} value={nuevoMedico.telefono} onChange={(e) => setNuevoMedico({ ...nuevoMedico, telefono: e.target.value })} required />
+                    <button type="submit" style={btnLarge}>{nuevoMedico.id ? '💾 Actualizar' : '➕ Añadir'}</button>
+                    {nuevoMedico.id && <button type="button" onClick={() => setNuevoMedico({ id: null, nombre: '', especialidad: '', telefono: '', matricula: '' })} style={{ marginLeft: '10px' }}>Cancelar</button>}
                   </form>
+                  <table border="1" style={tableStyle}>
+                    <thead><tr><th>Médico</th><th>Matrícula</th><th>Acciones</th></tr></thead>
+                    <tbody>
+                      {medicos.filter(m => m.nombre.toLowerCase().includes(busquedaAdmin.toLowerCase())).map(m => (
+                        <tr key={m.id}>
+                          <td>{m.nombre}</td><td>{m.matricula}</td>
+                          <td>
+                            <button onClick={() => { setNuevoMedico(m); window.scrollTo(0,0); }} style={{ color: 'orange', marginRight: '10px', background: 'none', border: 'none', cursor: 'pointer' }}>✏️ Editar</button>
+                            <button onClick={() => eliminarMedico(m.id)} style={{ color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}>🗑️ Borrar</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </section>
               )}
             </>
@@ -318,7 +300,7 @@ function App() {
                   <form onSubmit={guardarTurno} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                     <select onChange={e => setNuevoTurno({ ...nuevoTurno, medico_id: e.target.value })} required style={inputStyle}>
                       <option value="">¿Con qué médico?</option>
-                      {medicos.map(m => (<option key={m.id} value={m.id} style={{ color: 'black' }}>{m.nombre}</option>))}
+                      {medicos.map(m => (<option key={m.id} value={m.id} style={{ color: 'black' }}>{m.nombre} - {m.especialidad}</option>))}
                     </select>
                     <input type="date" onChange={e => setNuevoTurno({ ...nuevoTurno, fecha: e.target.value })} required style={inputStyle} />
                     <input type="time" onChange={e => setNuevoTurno({ ...nuevoTurno, hora: e.target.value })} required style={inputStyle} />
@@ -332,7 +314,7 @@ function App() {
                     <div key={t.id} style={{ borderLeft: '4px solid #4CAF50', padding: '10px', backgroundColor: '#333', marginBottom: '10px' }}>
                       <p><b>{t.fecha} - {t.hora}hs</b></p>
                       <p>Dr. {t.medico}</p>
-                      <p style={{ fontSize: '12px', color: '#4CAF50' }}>Estado: {t.estado || 'Pendiente'}</p>
+                      <p style={{ fontSize: '12px', color: '#4CAF50', fontWeight: 'bold' }}>Estado: {t.estado || 'Pendiente'}</p>
                     </div>
                   ))}
                 </div>
@@ -345,7 +327,7 @@ function App() {
   )
 }
 
-// Estilos
+// Estilos (estos van FUERA de la función App en tu archivo original, pero aquí los dejo integrados)
 const btnLarge = { padding: '15px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' };
 const inputStyle = { padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#fff', color: '#000' };
 const btnTab = (active) => ({ padding: '10px 20px', cursor: 'pointer', backgroundColor: active ? '#4CAF50' : '#333', color: 'white', border: 'none', marginRight: '5px', borderRadius: '5px' });
