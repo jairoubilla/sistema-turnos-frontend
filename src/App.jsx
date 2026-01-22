@@ -15,7 +15,6 @@ function App() {
   const [pacienteEncontrado, setPacienteEncontrado] = useState(null);
   const [mostrarRegistro, setMostrarRegistro] = useState(false);
 
-  // Estados para formularios
   const [nuevoPaciente, setNuevoPaciente] = useState({ id: null, nombre: '', dni: '', telefono: '' });
   const [nuevoMedico, setNuevoMedico] = useState({ id: null, nombre: '', especialidad: '', telefono: '', matricula: '' });
   const [nuevoTurno, setNuevoTurno] = useState({ paciente_id: '', medico_id: '', fecha: '', hora: '', motivo: '', estado: 'Pendiente' });
@@ -45,149 +44,79 @@ function App() {
   useEffect(() => { obtenerDatos() }, []);
 
   // ==========================================
-  // 3. FUNCIONES DE GESTIÓN (PACIENTES)
+  // 3. FUNCIONES DE GESTIÓN
   // ==========================================
   const guardarPaciente = async (e) => {
-  e.preventDefault();
-  
-  // Limpiamos los datos para enviar solo lo que el Schema espera
-  const datosLimpios = {
-    nombre: nuevoPaciente.nombre,
-    dni: nuevoPaciente.dni,
-    telefono: nuevoPaciente.telefono
+    e.preventDefault();
+    const datosLimpios = { nombre: nuevoPaciente.nombre, dni: nuevoPaciente.dni, telefono: nuevoPaciente.telefono };
+    const urlBase = 'https://sisteme-turnos-backend-production.up.railway.app/pacientes';
+    try {
+      if (nuevoPaciente.id) { await axios.put(`${urlBase}/${nuevoPaciente.id}`, datosLimpios); alert("Actualizado"); }
+      else { await axios.post(urlBase, datosLimpios); alert("Registrado"); }
+      setNuevoPaciente({ id: null, nombre: '', dni: '', telefono: '' });
+      setMostrarRegistro(false);
+      obtenerDatos();
+    // eslint-disable-next-line no-unused-vars
+    } catch (err) { alert("Error en paciente") }
   };
 
-  const urlBase = 'https://sisteme-turnos-backend-production.up.railway.app/pacientes';
-  
-  try {
-    if (nuevoPaciente.id) {
-      await axios.put(`${urlBase}/${nuevoPaciente.id}`, datosLimpios);
-      alert("Paciente actualizado");
-    } else {
-      await axios.post(urlBase, datosLimpios);
-      alert("¡Paciente registrado con éxito!");
-    }
-    
-    // Limpieza de estados
-    setNuevoPaciente({ id: null, nombre: '', dni: '', telefono: '' });
-    setMostrarRegistro(false);
-    obtenerDatos(); // Esto actualiza la lista en el Admin
-  } catch (err) {
-    // Si falla, esto te dirá EXACTAMENTE qué campo está mal en la consola (F12)
-    console.error("Error del servidor:", err.response?.data);
-    alert("Error: " + JSON.stringify(err.response?.data || "Problema de conexión"));
-  }
-};
-
-  const eliminarPaciente = async (id) => {
-    if (window.confirm("¿Eliminar este paciente? Esto podría borrar sus turnos.")) {
-      try {
-        await axios.delete(`https://sisteme-turnos-backend-production.up.railway.app/pacientes/${id}`);
-        obtenerDatos();
-      // eslint-disable-next-line no-unused-vars
-      } catch (err) { alert("Error al eliminar") }
-    }
-  }
-
-  // ==========================================
-  // 4. FUNCIONES DE GESTIÓN (MÉDICOS)
-  // ==========================================
-  // Función para Médicos
-const guardarMedico = async (e) => {
-  e.preventDefault();
-  // Forzamos que los nombres de los campos coincidan con el Schema de Python
-  const datosParaEnviar = {
-    nombre: nuevoMedico.nombre,
-    especialidad: nuevoMedico.especialidad,
-    matricula: nuevoMedico.matricula,
-    telefono: nuevoMedico.telefono
-  };
-
-  try {
+  const guardarMedico = async (e) => {
+    e.preventDefault();
+    const datosParaEnviar = { nombre: nuevoMedico.nombre, especialidad: nuevoMedico.especialidad, matricula: nuevoMedico.matricula, telefono: nuevoMedico.telefono };
     const url = 'https://sisteme-turnos-backend-production.up.railway.app/medicos';
-    if (nuevoMedico.id) {
-      await axios.put(`${url}/${nuevoMedico.id}`, datosParaEnviar);
-    } else {
-      await axios.post(url, datosParaEnviar);
-    }
-    alert("Médico procesado con éxito");
-    setNuevoMedico({ id: null, nombre: '', especialidad: '', telefono: '', matricula: '' });
-    obtenerDatos();
-  } catch (err) {
-    console.error("Error detallado:", err.response?.data);
-    alert("Error al procesar médico: " + JSON.stringify(err.response?.data));
-  }
-};
+    try {
+      if (nuevoMedico.id) { await axios.put(`${url}/${nuevoMedico.id}`, datosParaEnviar); }
+      else { await axios.post(url, datosParaEnviar); }
+      alert("Médico procesado");
+      setNuevoMedico({ id: null, nombre: '', especialidad: '', telefono: '', matricula: '' });
+      obtenerDatos();
+    // eslint-disable-next-line no-unused-vars
+    } catch (err) { alert("Error en médico") }
+  };
 
-  const eliminarMedico = async (id) => {
-    if (window.confirm("¿Eliminar este médico?")) {
-      try {
-        await axios.delete(`https://sisteme-turnos-backend-production.up.railway.app/medicos/${id}`);
-        obtenerDatos();
-      // eslint-disable-next-line no-unused-vars
-      } catch (err) { alert("Error al eliminar") }
-    }
-  }
-
-  // ==========================================
-  // 5. FUNCIONES DE GESTIÓN (TURNOS)
-  // ==========================================
   const guardarTurno = async (e) => {
     e.preventDefault();
-    // Forzamos el paciente_id si estamos en vista de paciente
     const datosFinales = { 
       ...nuevoTurno, 
-      paciente_id: rol === 'paciente' ? pacienteEncontrado?.id : nuevoTurno.paciente_id 
+      paciente_id: Number(pacienteEncontrado?.id) 
     };
-
     try {
       await axios.post('https://sisteme-turnos-backend-production.up.railway.app/turnos', datosFinales);
       alert("¡Turno agendado!");
       setNuevoTurno({ paciente_id: '', medico_id: '', fecha: '', hora: '', motivo: '', estado: 'Pendiente' });
       obtenerDatos();
-    } catch (err) { 
-      console.error(err.response?.data);
-      alert("Error: Verifica que el médico y paciente existan, o el horario esté libre.");
-    }
-  }
+    // eslint-disable-next-line no-unused-vars
+    } catch (err) { alert("Error al agendar") }
+  };
 
   const actualizarEstadoTurno = async (id, nuevoEstado) => {
-  try {
-    // Enviamos el nuevo estado al endpoint PUT de turnos que ya configuramos
-    await axios.put(`https://sisteme-turnos-backend-production.up.railway.app/turnos/${id}`, { 
-      estado: nuevoEstado 
-    });
-    alert("Estado actualizado");
-    obtenerDatos(); // Recarga la lista para ver el cambio reflejado
-  } catch (err) {
-    console.error("Error al cambiar estado:", err.response?.data);
-    alert("No se pudo cambiar el estado.");
-  }
-};
+    try {
+      await axios.put(`https://sisteme-turnos-backend-production.up.railway.app/turnos/${id}`, { estado: nuevoEstado });
+      obtenerDatos();
+    // eslint-disable-next-line no-unused-vars
+    } catch (err) { alert("Error al cambiar estado") }
+  };
 
   const eliminarTurno = async (id) => {
     if (window.confirm("¿Eliminar turno?")) {
-      try {
-        await axios.delete(`https://sisteme-turnos-backend-production.up.railway.app/turnos/${id}`);
-        obtenerDatos();
+      try { await axios.delete(`https://sisteme-turnos-backend-production.up.railway.app/turnos/${id}`); obtenerDatos(); }
       // eslint-disable-next-line no-unused-vars
-      } catch (err) { alert("Error al borrar") }
+      catch (err) { alert("Error al borrar") }
     }
-  }
+  };
 
-  // ==========================================
-  // 6. LÓGICA DE LOGIN Y FILTROS
-  // ==========================================
+  const enviarRecordatorio = (turno) => {
+    const mensaje = `Hola ${turno.paciente}, te recordamos tu turno con el Dr. ${turno.medico} el día ${turno.fecha} a las ${turno.hora}hs.`;
+    const url = `https://wa.me/${turno.telefono_paciente}?text=${encodeURIComponent(mensaje)}`;
+    window.open(url, '_blank');
+  };
+
   const buscarPaciente = () => {
     const encontrado = pacientes.find(p => p.dni === busquedaDni);
-    if (encontrado) {
-      setPacienteEncontrado(encontrado);
-      setRol('paciente');
-    } else {
-      if (window.confirm("DNI no registrado. ¿Crear cuenta?")) {
-        setNuevoPaciente({ ...nuevoPaciente, dni: busquedaDni });
-        setMostrarRegistro(true);
-      }
+    if (encontrado) { setPacienteEncontrado(encontrado); setRol('paciente'); }
+    else if (window.confirm("DNI no registrado. ¿Crear cuenta?")) {
+      setNuevoPaciente({ ...nuevoPaciente, dni: busquedaDni });
+      setMostrarRegistro(true);
     }
   };
 
@@ -197,13 +126,12 @@ const guardarMedico = async (e) => {
   );
 
   // ==========================================
-  // 7. RENDERIZADO (INTERFAZ)
+  // 4. RENDERIZADO
   // ==========================================
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial', backgroundColor: '#1a1a1a', color: 'white', minHeight: '100vh' }}>
-
+      
       {!rol ? (
-        /* ACCESO */
         <div style={{ textAlign: 'center', marginTop: '50px' }}>
           <h1>🏥 AITurnos</h1>
           <div style={{ backgroundColor: '#2a2a2a', padding: '30px', borderRadius: '20px', maxWidth: '350px', margin: '0 auto' }}>
@@ -217,9 +145,9 @@ const guardarMedico = async (e) => {
             ) : (
               <form onSubmit={guardarPaciente} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <h3>Crear Cuenta</h3>
-                <input placeholder="Nombre" style={inputStyle} value={nuevoPaciente.nombre} onChange={(e) => setNuevoPaciente({...nuevoPaciente, nombre: e.target.value})} required />
-                <input value={busquedaDni} readOnly style={{...inputStyle, backgroundColor: '#444'}} />
-                <input placeholder="WhatsApp" style={inputStyle} value={nuevoPaciente.telefono} onChange={(e) => setNuevoPaciente({...nuevoPaciente, telefono: e.target.value})} required />
+                <input placeholder="Nombre" style={inputStyle} value={nuevoPaciente.nombre} onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, nombre: e.target.value })} required />
+                <input value={busquedaDni} readOnly style={{ ...inputStyle, backgroundColor: '#444' }} />
+                <input placeholder="WhatsApp" style={inputStyle} value={nuevoPaciente.telefono} onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, telefono: e.target.value })} required />
                 <button type="submit" style={btnLarge}>Registrarme</button>
                 <button onClick={() => setMostrarRegistro(false)} style={{ background: 'none', color: 'gray', border: 'none' }}>Volver</button>
               </form>
@@ -227,7 +155,6 @@ const guardarMedico = async (e) => {
           </div>
         </div>
       ) : rol === 'admin_login' ? (
-        /* LOGIN ADMIN */
         <div style={{ textAlign: 'center', marginTop: '50px' }}>
           <div style={{ backgroundColor: '#2a2a2a', padding: '30px', borderRadius: '20px', maxWidth: '350px', margin: '0 auto' }}>
             <h3>🔒 Clave Admin</h3>
@@ -237,23 +164,27 @@ const guardarMedico = async (e) => {
           </div>
         </div>
       ) : (
-        /* PANELES INTERNOS */
         <div>
-          <button onClick={() => { setRol(null); setAutenticado(false); setPacienteEncontrado(null); }} style={{ marginBottom: '20px', cursor: 'pointer', padding: '10px', borderRadius: '5px', backgroundColor: '#444', color: 'white', border:'none' }}>⬅️ Salir</button>
+          <button onClick={() => { setRol(null); setAutenticado(false); setPacienteEncontrado(null); }} style={{ marginBottom: '20px', cursor: 'pointer', padding: '10px', borderRadius: '5px', backgroundColor: '#444', color: 'white', border: 'none' }}>⬅️ Salir</button>
 
           {rol === 'admin' && autenticado ? (
-            /* --- PANEL ADMIN COMPLETO --- */
             <>
+              {/* ESTADÍSTICAS */}
+              <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                <div style={{ ...cardStyle, borderTop: '5px solid #4CAF50' }}>Hoy: {turnos.filter(t => t.fecha === new Date().toISOString().split('T')[0]).length}</div>
+                <div style={{ ...cardStyle, borderTop: '5px solid #FFC107' }}>Pendientes: {turnos.filter(t => t.estado === 'Pendiente').length}</div>
+                <div style={{ ...cardStyle, borderTop: '5px solid #2196F3' }}>Pacientes: {pacientes.length}</div>
+              </div>
+
               <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
                 <button onClick={() => setVista('turnos')} style={btnTab(vista === 'turnos')}>📅 Turnos</button>
                 <button onClick={() => setVista('pacientes')} style={btnTab(vista === 'pacientes')}>👥 Pacientes</button>
                 <button onClick={() => setVista('medicos')} style={btnTab(vista === 'medicos')}>👨‍⚕️ Médicos</button>
               </div>
 
-              {/* VISTA TURNOS */}
               {vista === 'turnos' && (
                 <section>
-                  <input placeholder="🔍 Buscar..." style={{...inputStyle, width: '100%', marginBottom: '15px'}} onChange={(e) => setBusquedaAdmin(e.target.value)} />
+                  <input placeholder="🔍 Buscar..." style={{ ...inputStyle, width: '100%', marginBottom: '15px' }} onChange={(e) => setBusquedaAdmin(e.target.value)} />
                   <table border="1" style={tableStyle}>
                     <thead><tr><th>Paciente</th><th>Médico</th><th>Fecha</th><th>Estado</th><th>Acción</th></tr></thead>
                     <tbody>
@@ -268,7 +199,10 @@ const guardarMedico = async (e) => {
                               <option value="Cancelado">Cancelado</option>
                             </select>
                           </td>
-                          <td><button onClick={() => eliminarTurno(t.id)} style={{color:'red', border:'none', background:'none'}}>Borrar</button></td>
+                          <td>
+                            <button onClick={() => enviarRecordatorio(t)} style={{ backgroundColor: '#25D366', color: 'white', border: 'none', padding: '5px', borderRadius: '5px', marginRight: '5px', cursor: 'pointer' }}>📲 Avisar</button>
+                            <button onClick={() => eliminarTurno(t.id)} style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}>Borrar</button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -276,65 +210,33 @@ const guardarMedico = async (e) => {
                 </section>
               )}
 
-              {/* VISTA PACIENTES (MODIFICAR Y ELIMINAR) */}
               {vista === 'pacientes' && (
                 <section>
                   <h3>Gestión de Pacientes</h3>
                   <form onSubmit={guardarPaciente} style={formStyle}>
-                    <input placeholder="Nombre" style={inputStyle} value={nuevoPaciente.nombre} onChange={(e)=>setNuevoPaciente({...nuevoPaciente, nombre: e.target.value})} />
-                    <input placeholder="DNI" style={inputStyle} value={nuevoPaciente.dni} onChange={(e)=>setNuevoPaciente({...nuevoPaciente, dni: e.target.value})} />
-                    <input placeholder="Teléfono" style={inputStyle} value={nuevoPaciente.telefono} onChange={(e)=>setNuevoPaciente({...nuevoPaciente, telefono: e.target.value})} />
-                    <button type="submit" style={{backgroundColor:'#4CAF50', color:'white', padding:'10px'}}>{nuevoPaciente.id ? 'Actualizar' : 'Añadir'}</button>
-                    {nuevoPaciente.id && <button onClick={()=>setNuevoPaciente({id:null, nombre:'', dni:'', telefono:''})}>Cancelar</button>}
+                    <input placeholder="Nombre" style={inputStyle} value={nuevoPaciente.nombre} onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, nombre: e.target.value })} />
+                    <input placeholder="DNI" style={inputStyle} value={nuevoPaciente.dni} onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, dni: e.target.value })} />
+                    <button type="submit" style={btnLarge}>Guardar</button>
                   </form>
                   <table border="1" style={tableStyle}>
-                    <thead><tr><th>Nombre</th><th>DNI</th><th>Teléfono</th><th>Acciones</th></tr></thead>
-                    <tbody>
-                      {pacientes.map(p => (
-                        <tr key={p.id}>
-                          <td>{p.nombre}</td><td>{p.dni}</td><td>{p.telefono}</td>
-                          <td>
-                            <button onClick={() => setNuevoPaciente(p)} style={{color:'orange', marginRight:'10px'}}>Editar</button>
-                            <button onClick={() => eliminarPaciente(p.id)} style={{color:'red'}}>Borrar</button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
+                    <tbody>{pacientes.map(p => <tr key={p.id}><td>{p.nombre}</td><td>{p.dni}</td></tr>)}</tbody>
                   </table>
                 </section>
               )}
 
-              {/* VISTA MÉDICOS (MODIFICAR Y ELIMINAR) */}
               {vista === 'medicos' && (
                 <section>
-                  <h3>Gestión de Staff Médico</h3>
+                  <h3>Gestión Médicos</h3>
                   <form onSubmit={guardarMedico} style={formStyle}>
-                    <input placeholder="Nombre" style={inputStyle} value={nuevoMedico.nombre} onChange={(e)=>setNuevoMedico({...nuevoMedico, nombre: e.target.value})} required />
-                    <input placeholder="Especialidad" style={inputStyle} value={nuevoMedico.especialidad} onChange={(e)=>setNuevoMedico({...nuevoMedico, especialidad: e.target.value})} required />
-                    <input placeholder="Matrícula" style={inputStyle} value={nuevoMedico.matricula} onChange={(e)=>setNuevoMedico({...nuevoMedico, matricula: e.target.value})} required />
-                    <input placeholder="Teléfono" style={inputStyle} value={nuevoMedico.telefono} onChange={(e)=>setNuevoMedico({...nuevoMedico, telefono: e.target.value})} required />
-                    <button type="submit" style={btnLarge}>{nuevoMedico.id ? 'Actualizar Médico' : 'Añadir Médico'}</button>
-                    {nuevoMedico.id && <button onClick={()=>setNuevoMedico({id:null, nombre:'', especialidad:'', telefono:'', matricula:''})}>Cancelar</button>}
+                    <input placeholder="Nombre" style={inputStyle} value={nuevoMedico.nombre} onChange={(e) => setNuevoMedico({ ...nuevoMedico, nombre: e.target.value })} required />
+                    <input placeholder="Especialidad" style={inputStyle} value={nuevoMedico.especialidad} onChange={(e) => setNuevoMedico({ ...nuevoMedico, especialidad: e.target.value })} required />
+                    <input placeholder="Matrícula" style={inputStyle} value={nuevoMedico.matricula} onChange={(e) => setNuevoMedico({ ...nuevoMedico, matricula: e.target.value })} required />
+                    <button type="submit" style={btnLarge}>Añadir</button>
                   </form>
-                  <table border="1" style={tableStyle}>
-                    <thead><tr><th>Médico</th><th>Especialidad</th><th>Matrícula</th><th>Acciones</th></tr></thead>
-                    <tbody>
-                      {medicos.map(m => (
-                        <tr key={m.id}>
-                          <td>{m.nombre}</td><td>{m.especialidad}</td><td>{m.matricula}</td>
-                          <td>
-                            <button onClick={() => setNuevoMedico(m)} style={{color:'orange', marginRight:'10px', background:'none', border:'none', cursor:'pointer'}}>Editar</button>
-                            <button onClick={() => eliminarMedico(m.id)} style={{color:'red', background:'none', border:'none', cursor:'pointer'}}>Borrar</button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
                 </section>
               )}
             </>
           ) : (
-            /* VISTA PACIENTE */
             <section style={{ maxWidth: '900px', margin: '0 auto' }}>
               <h2>Hola, {pacienteEncontrado?.nombre}</h2>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
@@ -343,7 +245,7 @@ const guardarMedico = async (e) => {
                   <form onSubmit={guardarTurno} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                     <select onChange={e => setNuevoTurno({ ...nuevoTurno, medico_id: e.target.value })} required style={inputStyle}>
                       <option value="">¿Con qué médico?</option>
-                      {medicos.map(m => (<option key={m.id} value={m.id} style={{color:'black'}}>{m.nombre} - {m.especialidad}</option>))}
+                      {medicos.map(m => (<option key={m.id} value={m.id} style={{ color: 'black' }}>{m.nombre}</option>))}
                     </select>
                     <input type="date" onChange={e => setNuevoTurno({ ...nuevoTurno, fecha: e.target.value })} required style={inputStyle} />
                     <input type="time" onChange={e => setNuevoTurno({ ...nuevoTurno, hora: e.target.value })} required style={inputStyle} />
@@ -357,7 +259,7 @@ const guardarMedico = async (e) => {
                     <div key={t.id} style={{ borderLeft: '4px solid #4CAF50', padding: '10px', backgroundColor: '#333', marginBottom: '10px' }}>
                       <p><b>{t.fecha} - {t.hora}hs</b></p>
                       <p>Dr. {t.medico}</p>
-                      <p style={{fontSize:'12px', color: '#4CAF50', fontWeight: 'bold'}}>Estado: {t.estado || 'Pendiente'}</p>
+                      <p style={{ fontSize: '12px', color: '#4CAF50' }}>Estado: {t.estado || 'Pendiente'}</p>
                     </div>
                   ))}
                 </div>
@@ -376,6 +278,7 @@ const inputStyle = { padding: '12px', borderRadius: '8px', border: 'none', backg
 const btnTab = (active) => ({ padding: '10px 20px', cursor: 'pointer', backgroundColor: active ? '#4CAF50' : '#333', color: 'white', border: 'none', marginRight: '5px', borderRadius: '5px' });
 const tableStyle = { width: '100%', borderCollapse: 'collapse', textAlign: 'left', backgroundColor: '#333' };
 const formStyle = { display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' };
+const cardStyle = { backgroundColor: '#2a2a2a', padding: '15px', borderRadius: '10px', textAlign: 'center', flex: '1' };
 const selectEstadoStyle = (estado) => ({ padding: '5px', borderRadius: '5px', backgroundColor: estado === 'Confirmado' ? '#2e7d32' : estado === 'Atendido' ? '#1565c0' : estado === 'Cancelado' ? '#c62828' : '#555', color: 'white', fontWeight: 'bold' });
 
 export default App;
