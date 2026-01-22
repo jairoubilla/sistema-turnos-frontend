@@ -212,14 +212,87 @@ function App() {
 
               {vista === 'pacientes' && (
                 <section>
-                  <h3>Gestión de Pacientes</h3>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                    <h3>Gestión de Pacientes</h3>
+                    {/* BUSCADOR DE PACIENTES */}
+                    <input 
+                      placeholder="🔍 Buscar por nombre o DNI..." 
+                      style={{ ...inputStyle, width: '250px' }} 
+                      onChange={(e) => setBusquedaAdmin(e.target.value)} 
+                    />
+                  </div>
+    
+                  {/* Formulario que sirve para CREAR y para EDITAR */}
                   <form onSubmit={guardarPaciente} style={formStyle}>
-                    <input placeholder="Nombre" style={inputStyle} value={nuevoPaciente.nombre} onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, nombre: e.target.value })} />
-                    <input placeholder="DNI" style={inputStyle} value={nuevoPaciente.dni} onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, dni: e.target.value })} />
-                    <button type="submit" style={btnLarge}>Guardar</button>
+                    <input 
+                      placeholder="Nombre" 
+                      style={inputStyle} 
+                      value={nuevoPaciente.nombre} 
+                      onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, nombre: e.target.value })} 
+                      required 
+                    />
+                    <input 
+                      placeholder="DNI" 
+                      style={inputStyle} 
+                      value={nuevoPaciente.dni} 
+                      onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, dni: e.target.value })} 
+                      required 
+                    />
+                    <input 
+                      placeholder="Teléfono" 
+                      style={inputStyle} 
+                      value={nuevoPaciente.telefono} 
+                      onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, telefono: e.target.value })} 
+                      required 
+                    />
+                    <button type="submit" style={{ backgroundColor: '#4CAF50', color: 'white', padding: '10px', borderRadius: '8px', cursor: 'pointer', border: 'none' }}>
+                      {nuevoPaciente.id ? '💾 Actualizar' : '➕ Añadir'}
+                    </button>
+      
+                    {/* Botón para cancelar edición y limpiar el formulario */}
+                    {nuevoPaciente.id && (
+                      <button 
+                        onClick={() => setNuevoPaciente({ id: null, nombre: '', dni: '', telefono: '' })}
+                        style={{ backgroundColor: '#444', color: 'white', padding: '10px', marginLeft: '5px', borderRadius: '8px', border: 'none' }}
+                      >
+                        Cancelar
+                      </button>
+                    )}
                   </form>
+
                   <table border="1" style={tableStyle}>
-                    <tbody>{pacientes.map(p => <tr key={p.id}><td>{p.nombre}</td><td>{p.dni}</td></tr>)}</tbody>
+                    <thead>
+                      <tr>
+                        <th>Nombre</th>
+                        <th>DNI</th>
+                        <th>Teléfono</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pacientes.map(p => (
+                        <tr key={p.id}>
+                          <td>{p.nombre}</td>
+                          <td>{p.dni}</td>
+                          <td>{p.telefono}</td>
+                          <td>
+                            <button 
+                              onClick={() => setNuevoPaciente(p)} 
+                              style={{ color: 'orange', marginRight: '10px', background: 'none', border: 'none', cursor: 'pointer' }}
+                            >
+                              ✏️ Editar
+                            </button>
+                            <button 
+                              // eslint-disable-next-line no-undef
+                              onClick={() => eliminarPaciente(p.id)} 
+                              style={{ color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}
+                            >
+                              🗑️ Borrar
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
                   </table>
                 </section>
               )}
