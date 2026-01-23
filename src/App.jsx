@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 
@@ -22,6 +23,61 @@ function App() {
   const [passwordAdmin, setPasswordAdmin] = useState('');
   const [autenticado, setAutenticado] = useState(false);
   const [busquedaAdmin, setBusquedaAdmin] = useState('');
+
+  const [prefijo, setPrefijo] = useState('549')
+
+  const hoy = new Date().toISOString().split('T')[0]
+
+  const CODIGOS_PAIS = [
+    { nombre: 'Argentina', codigo: '549', bandera: '🇦🇷' },
+    { nombre: 'Chile', codigo: '56', bandera: '🇨🇱' },
+    { nombre: 'España', codigo: '34', bandera: '🇪🇸' },
+    { nombre: 'Uruguay', codigo: '598', bandera: '🇺🇾' },
+    { nombre: 'México', codigo: '52', bandera: '🇲🇽' },
+    { nombre: 'Otro', codigo: '', bandera: '🌐' }
+  ]
+  // Dicionario de traducciones
+  const TEXTOS = {
+    es: {
+      titulo: " AITurnos",
+      ingresar: "Ingresar",
+      crear: "Crear Cuenta",
+      agendar: "Agendar Turno",
+      misTurnos: "Mis Turnos",
+      confirmar: "Confirmar",
+      placeholderDni: "DNI o Pasaporte",
+      ayudaTel: "Selecciona tu país y escribe el número sin 0 ni 15.",
+      volver: "Volver",
+      nombre: "Nonbre Completo",
+      whatsapp: "Número de WhatsApp",
+      errorPaciente: "Error al registrar paciente. Revisa los datos.",
+      errorDni: "Este DNI ya está registrado.",
+      exitoRegistro: "¡Registro exitoso!",
+      exitoUpdate: "Datos actualizados correctamente",
+      errorValidacion: "* Completa nombre, apellido y DNI (min. 6 carac.)"
+    },
+    en: {
+      titulo: "AI-Booking",
+      ingresar: "Login",
+      crear: "Create Account",
+      agendar: "Book Appointment",
+      misTurnos: "My Appointments",
+      confirmar: "Confirm",
+      placeholderDni: "ID or Passport",
+      ayudaTel: "Select your country and type the number without local prefixes.",
+      volver: "Go Back",
+      nombre: "Full Name",
+      whatsapp: "WhatsApp Number",
+      errorPaciente: "Error registering patient. Please check the data.",
+      errorDni: "This ID is already registered.",
+      exitoRegistro: "Registration successful!",
+      exitoUpdate: "Data updated successfully",
+      errorValidacion: "* Please fill in full name and ID (min. 6 char.)"
+    }
+  }
+
+  // Esado para el idioma
+  const [idioma, setIdioma] = useState('es')
 
   // ==========================================
   // 2. CARGA DE DATOS
@@ -48,16 +104,41 @@ function App() {
   // ==========================================
   const guardarPaciente = async (e) => {
     e.preventDefault();
-    const datosLimpios = { nombre: nuevoPaciente.nombre, dni: nuevoPaciente.dni, telefono: nuevoPaciente.telefono };
+
+    // Verificamos duplicados de DNI 
+    if (!nuevoPaciente.id && pacientes.some(p => p.dni === nuevoPaciente.dni)) {
+      alert(TEXTOS[idioma].errorDni)
+      return
+    }
+
+    // Procesamos los datos
+    const numeroLimpio = nuevoPaciente.telefono.replace(/\D/g, '')
+    const telefonoFinal = prefijo + numeroLimpio 
+    const nombreFormateado = nuevoPaciente.nombre.replace(/\b\w/g, l => l.toUpperCase())
+
+    // Preparamos el objeto 
+    const datosLimpios = { 
+      nombre: nombreFormateado, 
+      dni: nuevoPaciente.dni,
+      telefono: telefonoFinal 
+    };
+
     const urlBase = 'https://sisteme-turnos-backend-production.up.railway.app/pacientes';
+    
     try {
-      if (nuevoPaciente.id) { await axios.put(`${urlBase}/${nuevoPaciente.id}`, datosLimpios); alert("Actualizado"); }
-      else { await axios.post(urlBase, datosLimpios); alert("Registrado"); }
+      if (nuevoPaciente.id) { 
+        await axios.put(`${urlBase}/${nuevoPaciente.id}`, datosLimpios);
+        alert(TEXTOS[idioma].exitoUpdate); 
+      } else { 
+        await axios.post(urlBase, datosLimpios); 
+        alert(TEXTOS[idioma].exitoRegistro);
+      }
+
+      // Limpieza de estados
       setNuevoPaciente({ id: null, nombre: '', dni: '', telefono: '' });
       setMostrarRegistro(false);
       obtenerDatos();
-    // eslint-disable-next-line no-unused-vars
-    } catch (err) { alert("Error en paciente") }
+    } catch (err) { alert(TEXTOS[idioma].errorPaciente) }
   };
 
   const eliminarPaciente = async (id) => {
@@ -65,7 +146,6 @@ function App() {
       try {
         await axios.delete(`https://sisteme-turnos-backend-production.up.railway.app/pacientes/${id}`);
         obtenerDatos();
-      // eslint-disable-next-line no-unused-vars
       } catch (err) { alert("Error al eliminar") }
     }
   };
@@ -80,7 +160,6 @@ function App() {
       alert("Médico procesado");
       setNuevoMedico({ id: null, nombre: '', especialidad: '', telefono: '', matricula: '' });
       obtenerDatos();
-    // eslint-disable-next-line no-unused-vars
     } catch (err) { alert("Error en médico") }
   };
 
@@ -89,7 +168,6 @@ function App() {
       try {
         await axios.delete(`https://sisteme-turnos-backend-production.up.railway.app/medicos/${id}`);
         obtenerDatos();
-      // eslint-disable-next-line no-unused-vars
       } catch (err) { alert("Error al eliminar") }
     }
   };
@@ -105,7 +183,6 @@ function App() {
       alert("¡Turno agendado!");
       setNuevoTurno({ paciente_id: '', medico_id: '', fecha: '', hora: '', motivo: '', estado: 'Pendiente' });
       obtenerDatos();
-    // eslint-disable-next-line no-unused-vars
     } catch (err) { alert("Error al agendar") }
   };
 
@@ -113,20 +190,31 @@ function App() {
     try {
       await axios.put(`https://sisteme-turnos-backend-production.up.railway.app/turnos/${id}`, { estado: nuevoEstado });
       obtenerDatos();
-    // eslint-disable-next-line no-unused-vars
     } catch (err) { alert("Error al cambiar estado") }
   };
 
   const eliminarTurno = async (id) => {
     if (window.confirm("¿Eliminar turno?")) {
       try { await axios.delete(`https://sisteme-turnos-backend-production.up.railway.app/turnos/${id}`); obtenerDatos(); }
-      // eslint-disable-next-line no-unused-vars
       catch (err) { alert("Error al borrar") }
     }
   };
 
   const enviarRecordatorio = (turno) => {
-    const mensaje = `Hola ${turno.paciente}, te recordamos tu turno con el Dr. ${turno.medico} el día ${turno.fecha} a las ${turno.hora}hs.`;
+    // Calculamos la fecha de mañana para comparar
+    const fechaManana = new Date()
+    fechaManana.setDate(fechaManana.getDate() + 1)
+    const mananaStr = fechaManana.toISOString().split('T')[0]
+
+    let momento = "próximamente";
+    if (turno.fecha === hoy) {
+      momento = "HOY";
+    }else if (turno.fecha === mananaStr) {
+      momento = "MAÑANA";
+    }
+
+    const mensaje = `Hola ${turno.paciente}, te recordamos que tienes un turno agendado para ${momento}, el día ${turno.fecha} a las ${turno.hora}hs con el Dr. ${turno.medico}. ¡Te esperamos!`;
+
     const url = `https://wa.me/${turno.telefono_paciente}?text=${encodeURIComponent(mensaje)}`;
     window.open(url, '_blank');
   };
@@ -145,31 +233,106 @@ function App() {
     t.medico?.toLowerCase().includes(busquedaAdmin.toLowerCase())
   );
 
+  const esValido = () => {
+    const dniValido = nuevoPaciente.dni.length >= 6 // Mínimo 6 caracteres para DNI/Pasaporte
+    const nombreValido = nuevoPaciente.nombre.trim().includes(' ') // Al menos nombre y apellido
+    const telefonoValido = nuevoPaciente.telefono.replace(/\D/g, '').length >= 7 //Al menos 7 números
+
+    return dniValido && nombreValido && telefonoValido
+  }
+
   // ==========================================
   // 4. RENDERIZADO
   // ==========================================
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial', backgroundColor: '#1a1a1a', color: 'white', minHeight: '100vh' }}>
-      
+
+      {/* Selector de idioma - Solo visible si no se ha logueado nadie */}
+      {!rol && (
+        <div style={{ textAlign: 'right', marginBottom: '10px' }}>
+          <button onClick={() => setIdioma('es')} style={{ background: idioma === 'es' ? '#444' : 'none', border: 'none', color: 'white', cursor: 'pointer', padding: '5px', borderRadius: '5px', marginRight: '10px '}}>🇪🇸 ES</button>
+          <button onClick={() => setIdioma('en')} style={{ background: idioma === 'en' ? '#444' : 'none', border: 'none', color: 'white', cursor: 'pointer', padding: '5px', borderRadius: '5px' }}>🇺🇸 EN</button>
+        </div>
+      )}
       {!rol ? (
         <div style={{ textAlign: 'center', marginTop: '50px' }}>
-          <h1>🏥 AITurnos</h1>
+          <h1>{TEXTOS[idioma].titulo}</h1>
           <div style={{ backgroundColor: '#2a2a2a', padding: '30px', borderRadius: '20px', maxWidth: '350px', margin: '0 auto' }}>
+            
             {!mostrarRegistro ? (
+
+              // Vista de login
               <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                <h3>Ingresar</h3>
-                <input placeholder='Tu DNI' style={inputStyle} value={busquedaDni} onChange={(e) => setBusquedaDni(e.target.value)} />
-                <button onClick={buscarPaciente} style={btnLarge}>Ingresar</button>
+                <h3>{TEXTOS[idioma].ingresar}</h3>
+                <input 
+                  placeholder={TEXTOS[idioma].placeholderDni} 
+                  style={inputStyle} 
+                  value={busquedaDni} 
+                  onChange={(e) => setBusquedaDni(e.target.value)} 
+                />
+                <button onClick={buscarPaciente} style={btnLarge}>{TEXTOS[idioma].ingresar}</button>
                 <button onClick={() => setRol('admin_login')} style={{ background: 'none', color: '#4CAF50', border: 'none', cursor: 'pointer' }}>Acceso Admin</button>
               </div>
             ) : (
+
+              //Vista de registro
               <form onSubmit={guardarPaciente} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <h3>Crear Cuenta</h3>
-                <input placeholder="Nombre" style={inputStyle} value={nuevoPaciente.nombre} onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, nombre: e.target.value })} required />
+                <h3>{TEXTOS[idioma].crear}</h3>
+                <input 
+                  placeholder={TEXTOS[idioma].nombre}
+                  style={inputStyle} 
+                  value={nuevoPaciente.nombre} 
+                  onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, nombre: e.target.value })} 
+                  required 
+                />
                 <input value={busquedaDni} readOnly style={{ ...inputStyle, backgroundColor: '#444' }} />
-                <input placeholder="WhatsApp" style={inputStyle} value={nuevoPaciente.telefono} onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, telefono: e.target.value })} required />
-                <button type="submit" style={btnLarge}>Registrarme</button>
-                <button onClick={() => setMostrarRegistro(false)} style={{ background: 'none', color: 'gray', border: 'none' }}>Volver</button>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <div style={{ display: 'flex', gap: '5px' }}>   
+                    {/* SELECTOR DE BANDERAS */}
+                    <select 
+                      value={prefijo} 
+                      onChange={(e) => setPrefijo(e.target.value)}
+                      style={{ ...inputStyle, width: '90px', padding: '5px', fontSize: '14px' }}
+                    >
+                      {CODIGOS_PAIS.map(p => (
+                        <option key={p.codigo} value={p.codigo}>{p.bandera} +{p.codigo}</option>
+                      ))}
+                    </select>
+    
+                    {/* CAMPO DE NÚMERO */}
+                    <input 
+                      placeholder={TEXTOS[idioma].whatsapp}
+                      style={{ ...inputStyle, flex: 1 }} 
+                      value={nuevoPaciente.telefono} 
+                      onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, telefono: e.target.value })} 
+                      required 
+                    />
+                  </div>
+                  <span style={{ fontSize: '10px', color: '#aaa' }}>
+                    {TEXTOS[idioma].ayudaTel}
+                  </span>
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={!esValido()} 
+                  style={{btnLarge, backgroundColor: esValido() ? '#4CAF50' : '#555', cursor: esValido() ? 'pointer' : 'not-allowed', opacity: esValido() ? 1 : 0.6 }}
+                >
+                  {TEXTOS[idioma].confirmar}
+                </button>
+
+                {!esValido() && (
+                  <span style={{fontSize: '10px', color: '#ff4444', textAlign: 'center' }}>
+                    {idioma === 'es'
+                      ? '* Completa nombre, apellido y DNI (min. 6 carac.)'
+                      : '* Fill in full name and ID (min. 6 char.)'}
+                  </span>
+                )}
+
+                <button type="button" onClick={() => setMostrarRegistro(false)} style={{ background: 'none', color: 'gray', border: 'none', cursor: 'pointer' }}>
+                  {TEXTOS[idioma].volver}
+                </button>
               </form>
             )}
           </div>
@@ -189,42 +352,104 @@ function App() {
 
           {rol === 'admin' && autenticado ? (
             <>
-              {/* ESTADÍSTICAS */}
+              {/* --- ESTADÍSTICAS RÁPIDAS (Admin) --- */}
               <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', flexWrap: 'wrap' }}>
-                <div style={{ ...cardStyle, borderTop: '5px solid #4CAF50' }}>Hoy: {turnos.filter(t => t.fecha === new Date().toISOString().split('T')[0]).length}</div>
-                <div style={{ ...cardStyle, borderTop: '5px solid #FFC107' }}>Pendientes: {turnos.filter(t => t.estado === 'Pendiente').length}</div>
-                <div style={{ ...cardStyle, borderTop: '5px solid #2196F3' }}>Pacientes: {pacientes.length}</div>
-              </div>
+                {/* Turnos totales del día */}
+                <div style={{ ...cardStyle, borderTop: '5px solid #4CAF50' }}>
+                  <h4 style={{ margin: 0, fontSize: '12px', color: '#aaa' }}>TURNOS HOY</h4>
+                  <p style={{ fontSize: '24px', fontWeight: 'bold', margin: '5px 0' }}>
+                    {turnos.filter(t => t.fecha === hoy).length}
+                  </p>
+                </div>
 
-              <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
-                <button onClick={() => setVista('turnos')} style={btnTab(vista === 'turnos')}>📅 Turnos</button>
-                <button onClick={() => setVista('pacientes')} style={btnTab(vista === 'pacientes')}>👥 Pacientes</button>
-                <button onClick={() => setVista('medicos')} style={btnTab(vista === 'medicos')}>👨‍⚕️ Médicos</button>
+                {/* Pacientes que ya pasaron por el consultorio hoy */}
+                <div style={{ ...cardStyle, borderTop: '5px solid #2196F3' }}>
+                  <h4 style={{ margin: 0, fontSize: '12px', color: '#aaa' }}>ATENDIDOS HOY</h4>
+                  <p style={{ fontSize: '24px', fontWeight: 'bold', margin: '5px 0', color: '#2196F3' }}>
+                    {turnos.filter(t => t.fecha === hoy && t.estado === 'Atendido').length}
+                  </p>
+                </div>
+
+                {/* Lo que queda pendiente en la sala de espera */}
+                <div style={{ ...cardStyle, borderTop: '5px solid #FFC107' }}>
+                  <h4 style={{ margin: 0, fontSize: '12px', color: '#aaa' }}>POR ATENDER</h4>
+                  <p style={{ fontSize: '24px', fontWeight: 'bold', margin: '5px 0', color: '#FFC107' }}>
+                    {turnos.filter(t => t.fecha === hoy && (t.estado === 'Pendiente' || t.estado === 'Confirmado')).length}
+                  </p>
+                </div>
               </div>
 
               {vista === 'turnos' && (
                 <section>
-                  <input placeholder="🔍 Buscar..." style={{ ...inputStyle, width: '100%', marginBottom: '15px' }} onChange={(e) => setBusquedaAdmin(e.target.value)} />
+                  <input 
+                    placeholder="Buscar paciente o médico..." 
+                    style={{ ...inputStyle, width: '100%', marginBottom: '15px' }} 
+                    onChange={(e) => setBusquedaAdmin(e.target.value)} 
+                  />
+
                   <table border="1" style={tableStyle}>
-                    <thead><tr><th>Paciente</th><th>Médico</th><th>Fecha</th><th>Estado</th><th>Acción</th></tr></thead>
+                    <thead>
+                      <tr>
+                        <th>Paciente</th>
+                        <th>Médico</th>
+                        <th>Fecha</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                      </tr>
+                    </thead>
                     <tbody>
-                      {turnosFiltrados.map(t => (
-                        <tr key={t.id}>
-                          <td>{t.paciente}</td><td>{t.medico}</td><td>{t.fecha}</td>
-                          <td>
-                            <select value={t.estado} onChange={(e) => actualizarEstadoTurno(t.id, e.target.value)} style={selectEstadoStyle(t.estado)}>
-                              <option value="Pendiente">Pendiente</option>
-                              <option value="Confirmado">Confirmado</option>
-                              <option value="Atendido">Atendido</option>
-                              <option value="Cancelado">Cancelado</option>
-                            </select>
-                          </td>
-                          <td>
-                            <button onClick={() => enviarRecordatorio(t)} style={{ backgroundColor: '#25D366', color: 'white', border: 'none', padding: '5px', borderRadius: '5px', marginRight: '5px', cursor: 'pointer' }}>📲 Avisar</button>
-                            <button onClick={() => eliminarTurno(t.id)} style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}>Borrar</button>
-                          </td>
-                        </tr>
-                      ))}
+                      {turnos
+                        .filter(t =>
+                          t.paciente?.toLowerCase().includes(busquedaAdmin.toLowerCase()) ||
+                          t.medico?.toLowerCase().includes(busquedaAdmin.toLowerCase)
+                        )
+                        .map(t => {
+                          const esHoy = t.fecha === hoy
+
+                        return (
+                          <tr 
+                            key={t.id} 
+                            style={{ 
+                              backgroundColor: esHoy ? '#3d3d3d' : 'transparent', // Un gris más claro si es hoy
+                              borderLeft: esHoy ? '4px solid #4CAF50' : 'none'    // Una sutil línea verde lateral
+                            }}
+                          >
+                            <td style={{ padding: '10px' }}>{t.paciente}</td>
+                            <td>{t.medico}</td>
+                            <td>
+                              <span style={{ fontWeight: esHoy ? 'bold' : 'normal' }}>
+                                {t.fecha}
+                              </span>
+                            </td>
+                            <td>
+                              <select 
+                                value={t.estado} 
+                                onChange={(e) => actualizarEstadoTurno(t.id, e.target.value)} 
+                                style={selectEstadoStyle(t.estado)}
+                              >
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="Confirmado">Confirmado</option>
+                                <option value="Atendido">Atendido</option>
+                                <option value="Cancelado">Cancelado</option>
+                              </select>
+                            </td>
+                            <td>
+                              <button 
+                                onClick={() => enviarRecordatorio(t)} 
+                                style={{ backgroundColor: '#25D366', color: 'white', border: 'none', padding: '5px', borderRadius: '5px', marginRight: '5px', cursor: 'pointer' }}
+                              >
+                                📲 Avisar
+                              </button>
+                              <button 
+                                onClick={() => eliminarTurno(t.id)} 
+                                style={{ color: '#F44336', border: 'none', background: 'none', cursor: 'pointer' }}
+                              >
+                                Borrar
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </section>
@@ -232,7 +457,7 @@ function App() {
 
               {vista === 'pacientes' && (
                 <section>
-                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                     <h3>Gestión de Pacientes</h3>
                     <input placeholder="🔍 Buscar..." style={{ ...inputStyle, width: '250px' }} onChange={(e) => setBusquedaAdmin(e.target.value)} />
                   </div>
@@ -302,8 +527,8 @@ function App() {
                       <option value="">¿Con qué médico?</option>
                       {medicos.map(m => (<option key={m.id} value={m.id} style={{ color: 'black' }}>{m.nombre} - {m.especialidad}</option>))}
                     </select>
-                    <input type="date" onChange={e => setNuevoTurno({ ...nuevoTurno, fecha: e.target.value })} required style={inputStyle} />
-                    <input type="time" onChange={e => setNuevoTurno({ ...nuevoTurno, hora: e.target.value })} required style={inputStyle} />
+                    <input type="date" min={hoy} onChange={e => setNuevoTurno({ ...nuevoTurno, fecha: e.target.value })} required style={inputStyle} />
+                    <input type="time" min="08:00" max="20:00" onChange={e => setNuevoTurno({ ...nuevoTurno, hora: e.target.value })} required style={inputStyle} />
                     <input placeholder="Motivo" onChange={e => setNuevoTurno({ ...nuevoTurno, motivo: e.target.value })} required style={inputStyle} />
                     <button type="submit" style={btnLarge}>Confirmar</button>
                   </form>
@@ -327,13 +552,26 @@ function App() {
   )
 }
 
-// Estilos (estos van FUERA de la función App en tu archivo original, pero aquí los dejo integrados)
+// Estilos 
 const btnLarge = { padding: '15px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' };
 const inputStyle = { padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#fff', color: '#000' };
 const btnTab = (active) => ({ padding: '10px 20px', cursor: 'pointer', backgroundColor: active ? '#4CAF50' : '#333', color: 'white', border: 'none', marginRight: '5px', borderRadius: '5px' });
 const tableStyle = { width: '100%', borderCollapse: 'collapse', textAlign: 'left', backgroundColor: '#333' };
 const formStyle = { display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' };
 const cardStyle = { backgroundColor: '#2a2a2a', padding: '15px', borderRadius: '10px', textAlign: 'center', flex: '1' };
-const selectEstadoStyle = (estado) => ({ padding: '5px', borderRadius: '5px', backgroundColor: estado === 'Confirmado' ? '#2e7d32' : estado === 'Atendido' ? '#1565c0' : estado === 'Cancelado' ? '#c62828' : '#555', color: 'white', fontWeight: 'bold' });
+const selectEstadoStyle = (estado) => ({ 
+  padding: '6px 10px',
+  borderRadius: '20px', 
+  border: 'none',
+  fontSize: '12px',
+  fontWeight: 'bold',
+  cursor: 'pointer',
+  color: 'white',
+  backgroundColor: 
+    estado === 'Confirmado' ? '#2e7d32' :
+    estado === 'Atendido' ? '#1565c0' : 
+    estado === 'Cancelado' ? '#c62828' : 
+    '#666'
+  });
 
 export default App;
