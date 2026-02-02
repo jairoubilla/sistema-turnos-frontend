@@ -16,8 +16,8 @@ function App() {
   const [pacienteEncontrado, setPacienteEncontrado] = useState(null);
   const [mostrarRegistro, setMostrarRegistro] = useState(false);
 
-  const [nuevoPaciente, setNuevoPaciente] = useState({ id: null, nombre: '', dni: '', telefono: '' });
-  const [nuevoMedico, setNuevoMedico] = useState({ id: null, nombre: '', especialidad: '', telefono: '', matricula: '' });
+  const [nuevoPaciente, setNuevoPaciente] = useState({ id: null, nombre: '', dni: '', telefono: '', alergias: '' });
+  const [nuevoMedico, setNuevoMedico] = useState({ id: null, nombre: '', especialidad: '', telefono: '', matricula: '', consultorio: '' });
   const [nuevoTurno, setNuevoTurno] = useState({ paciente_id: '', medico_id: '', fecha: '', hora: '', motivo: '', estado: 'Pendiente' });
 
   const [passwordAdmin, setPasswordAdmin] = useState('');
@@ -54,7 +54,11 @@ function App() {
       errorDni: "Este DNI ya está registrado.",
       exitoRegistro: "¡Registro exitoso!",
       exitoUpdate: "Datos actualizados correctamente",
-      errorValidacion: "* Completa nombre, apellido y DNI (min. 6 carac.)"
+      errorValidacion: "* Completa nombre, apellido y DNI (min. 6 carac.)",
+      historiaClinica: "Historia Clínica",
+      evolucion: "Evolución Médica",
+      siRegistros: "No hay antecedentes registrados",
+      nuevaEntrada: "Agregar Evolución"
     },
     en: {
       titulo: "AI-Booking",
@@ -72,7 +76,12 @@ function App() {
       errorDni: "This ID is already registered.",
       exitoRegistro: "Registration successful!",
       exitoUpdate: "Data updated successfully",
-      errorValidacion: "* Please fill in full name and ID (min. 6 char.)"
+      errorValidacion: "* Please fill in full name and ID (min. 6 char.)",
+      historiaClinica: "Medical History",
+      evolucion: "Medical Evolution",
+      siRegistros: "No medical records found for this patient.",
+      verHistorial: "View History",
+      detalleHistorial: "Consultation History"
     }
   }
 
@@ -152,7 +161,13 @@ function App() {
 
   const guardarMedico = async (e) => {
     e.preventDefault();
-    const datosParaEnviar = { nombre: nuevoMedico.nombre, especialidad: nuevoMedico.especialidad, matricula: nuevoMedico.matricula, telefono: nuevoMedico.telefono };
+    const datosParaEnviar = { 
+      nombre: nuevoMedico.nombre, 
+      especialidad: nuevoMedico.especialidad, 
+      matricula: nuevoMedico.matricula, 
+      telefono: nuevoMedico.telefono,
+      consultorio: nuevoMedico.consultorio
+    };
     const url = 'https://sisteme-turnos-backend-production.up.railway.app/medicos';
     try {
       if (nuevoMedico.id) { await axios.put(`${url}/${nuevoMedico.id}`, datosParaEnviar); }
@@ -174,23 +189,46 @@ function App() {
 
   const guardarTurno = async (e) => {
     e.preventDefault();
+
+    //Buscamos si ya existe un turno con ese médico, fecha y hora
+    const turnoOcupado = turnos.find(t =>
+      t.medico_id === Number(nuevoTurno.medico_id) &&
+      t.fecha === nuevoTurno.fecha &&
+      t.hora === nuevoTurno.hora &&
+      t.estado !== 'Cancelado' // Si esta cancelado, el horario queda libre
+    )
+
+    if (turnoOcupado) {
+      alert(idioma === 'es'
+        ? "Este horario ya esta ocupado para este médico. Por favor elige otro."
+        : "This slot is already taken for this doctor. Please choose another one.")
+      return // Cortamos la funcion aqui, no se envia nada al backend
+    }
+
+    //Si el horario está libre, procedemos a guardar
     const datosFinales = { 
       ...nuevoTurno, 
       paciente_id: Number(pacienteEncontrado?.id) 
     };
     try {
       await axios.post('https://sisteme-turnos-backend-production.up.railway.app/turnos', datosFinales);
-      alert("¡Turno agendado!");
+      alert(idioma === 'es' ? "¡Turno agendado!" : "Appointment scheduled");
       setNuevoTurno({ paciente_id: '', medico_id: '', fecha: '', hora: '', motivo: '', estado: 'Pendiente' });
       obtenerDatos();
     } catch (err) { alert("Error al agendar") }
   };
 
-  const actualizarEstadoTurno = async (id, nuevoEstado) => {
+  const actualizarEstadoTurno = async (id, nuevoEstado, nuevaNota = null) => {
     try {
-      await axios.put(`https://sisteme-turnos-backend-production.up.railway.app/turnos/${id}`, { estado: nuevoEstado });
+      const datosAEnviar = { estado: nuevoEstado}
+      // Si mandamos una nota, la incluimos en el objeto "motivo"
+      if (nuevaNota !== null) datosAEnviar.motivo = nuevaNota
+
+      await axios.put(`https://sisteme-turnos-backend-production.up.railway.app/turnos/${id}`, datosAEnviar);
       obtenerDatos();
-    } catch (err) { alert("Error al cambiar estado") }
+    } catch (err) {
+      alert("Error al cambiar estado") 
+    }
   };
 
   const eliminarTurno = async (id) => {
@@ -240,6 +278,49 @@ function App() {
 
     return dniValido && nombreValido && telefonoValido
   }
+
+  const exportarExcel = () => {
+    // Definimos los titulos de las columnas
+    const encabezados = "PACIENTE\tDNI/PASAPORTE\tTELÉFONO\tMÉDICO\tFECHA\tHORA\tESTADO\tNOTAS/MOTIVO\n";
+
+    // Filtramos solo los turnos que se ven en pantalla (o todos los de hoy)
+    const datosParaExportar = turnosFiltrados.length > 0 ? turnosFiltrados : turnos.filter(t => t.fecha === hoy)
+
+    // Construimos las filas uniendo los datos con tabulaciones (\t)
+    const filas = datosParaExportar.map(t => {
+      // Buscamos el dni y el telefono extra si no vienen en el objeto turno
+      const p = pacientes.find(pac => pac.nombre === t.paciente) || {}
+      return `${t.paciente}\t${p.dni || 'N/A'}\t${p.telefono || 'N/A'}\t${t.medico}\t${t.fecha}\t${t.hora}\t${t.estado}\t${t.motivo || ''}`
+    }).join("\n");
+
+    // Creamos el archivo y lo descargamos
+    const blob = new Blob(["\ufeff" + encabezados + filas], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Planilla_Turnos_${hoy}.xls`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const verHistoriaClinica = (pacienteNombre) => {
+    const historial = turnos
+      .filter(t => t.paciente === pacienteNombre && t.motivo)
+      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+    if (historial.length === 0) {
+      alert(TEXTOS[idioma].sinRegistros);
+      return;
+    }
+
+    const titulo = `🏥 ${TEXTOS[idioma].historiaClinica}: ${pacienteNombre}`;
+  
+    const detalle = historial.map(h => 
+      `📅 ${h.fecha} | Dr. ${h.medico}:\n📝 ${h.motivo}\n-------------------`
+    ).join("\n\n");
+
+    alert(`${titulo}\n\n${detalle}`);
+  };
 
   // ==========================================
   // 4. RENDERIZADO
@@ -314,10 +395,17 @@ function App() {
                   </span>
                 </div>
 
+                <input 
+                  placeholder={idioma === 'es' ? "Alergias (Ej: Penicilina, ninguna)" : "Allergies (Ex: Penicillin, none)"} 
+                  style={{ ...inputStyle, border: nuevoPaciente.alergias ? '1px solid #ff4444' : 'none' }} 
+                  value={nuevoPaciente.alergias} 
+                  onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, alergias: e.target.value })} 
+                />
+
                 <button 
                   type="submit" 
                   disabled={!esValido()} 
-                  style={{btnLarge, backgroundColor: esValido() ? '#4CAF50' : '#555', cursor: esValido() ? 'pointer' : 'not-allowed', opacity: esValido() ? 1 : 0.6 }}
+                  style={{ ...btnLarge, backgroundColor: esValido() ? '#4CAF50' : '#555', cursor: esValido() ? 'pointer' : 'not-allowed', opacity: esValido() ? 1 : 0.6 }}
                 >
                   {TEXTOS[idioma].confirmar}
                 </button>
@@ -340,19 +428,39 @@ function App() {
       ) : rol === 'admin_login' ? (
         <div style={{ textAlign: 'center', marginTop: '50px' }}>
           <div style={{ backgroundColor: '#2a2a2a', padding: '30px', borderRadius: '20px', maxWidth: '350px', margin: '0 auto' }}>
-            <h3>🔒 Clave Admin</h3>
+            <h3> Clave Admin</h3>
             <input type="password" placeholder="Clave" style={inputStyle} value={passwordAdmin} onChange={(e) => setPasswordAdmin(e.target.value)} />
             <button onClick={() => passwordAdmin === 'admin123' ? (setRol('admin'), setAutenticado(true)) : alert("Error")} style={btnLarge}>Entrar</button>
             <button onClick={() => setRol(null)} style={{ background: 'none', color: 'gray', border: 'none', marginTop: '10px' }}>Cerrar</button>
           </div>
         </div>
       ) : (
+
         <div>
           <button onClick={() => { setRol(null); setAutenticado(false); setPacienteEncontrado(null); }} style={{ marginBottom: '20px', cursor: 'pointer', padding: '10px', borderRadius: '5px', backgroundColor: '#444', color: 'white', border: 'none' }}>⬅️ Salir</button>
 
           {rol === 'admin' && autenticado ? (
             <>
-              {/* --- ESTADÍSTICAS RÁPIDAS (Admin) --- */}
+              {/* --- BARRA DE NAVEGACIÓN ADMIN (DENTRO DEL PANEL) --- */}
+              <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <button onClick={() => setVista('turnos')} style={btnTab(vista === 'turnos')}>
+                  {idioma === 'es' ? 'Turnos' : 'Appointments'}
+                </button>
+                <button onClick={() => setVista('pacientes')} style={btnTab(vista === 'pacientes')}>
+                  {idioma === 'es' ? 'Pacientes' : 'Patients'}
+                </button>
+                <button onClick={() => setVista('medicos')} style={btnTab(vista === 'medicos')}>
+                  {idioma === 'es' ? 'Médicos' : 'Doctors'}
+                </button>
+                <button 
+                  onClick={() => setVista('tv')} 
+                  style={btnTab(vista === 'tv')}
+                >
+                  📺 {idioma === 'es' ? 'Modo TV' : 'TV Mode'}
+                </button>
+              </div>
+
+              {/* --- ESTADÍSTICAS RÁPIDAS Y HERRAMIENTAS (Admin) --- */}
               <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', flexWrap: 'wrap' }}>
                 {/* Turnos totales del día */}
                 <div style={{ ...cardStyle, borderTop: '5px solid #4CAF50' }}>
@@ -378,6 +486,22 @@ function App() {
                   </p>
                 </div>
               </div>
+
+              {/* BOTÓN DE EXPORTACIÓN */}
+              <button
+                onClick={exportarExcel}
+                style={{
+                  ...btnLarge,
+                  backgroundColor: '#2E7D32',
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px'
+                }}
+              >
+                {idioma === 'es' ? 'Descargar Planilla Excel del Día' : 'Download Today\'s Excel Sheet'}
+              </button>
 
               {vista === 'turnos' && (
                 <section>
@@ -415,9 +539,30 @@ function App() {
                             }}
                           >
                             <td style={{ padding: '10px' }}>{t.paciente}</td>
-                            <td>{t.medico}</td>
+                            <td
+                              style={{
+                                cursor: 'pointer',
+                                color: '#4CAF50',
+                                fontWeight: 'bold',
+                                textDecoration: 'underline dotted'
+                              }}
+                              title={idioma === 'es' ? "Click para editar nota médica" : "Click to edit medical note"}
+                              onClick={() => {
+                                const nuevaNota = prompt(
+                                  idioma === 'es' ? "Evolucion / Nota médica para este turno:" : "Medical note for this appointment:",
+                                  t.motivo
+                                )
+
+                                // Si el usuario no cancela el prompt, guardamos la nota
+                                if (nuevaNota !== null) {
+                                  actualizarEstadoTurno(t.id, t.estado, nuevaNota)
+                                }
+                              }}
+                            >
+                              {t.medico}
+                            </td>
                             <td>
-                              <span style={{ fontWeight: esHoy ? 'bold' : 'normal' }}>
+                              <span style={{ fontWeight: esHoy ? 'bold' : 'normal'}}>
                                 {t.fecha}
                               </span>
                             </td>
@@ -458,28 +603,112 @@ function App() {
               {vista === 'pacientes' && (
                 <section>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                    <h3>Gestión de Pacientes</h3>
-                    <input placeholder="🔍 Buscar..." style={{ ...inputStyle, width: '250px' }} onChange={(e) => setBusquedaAdmin(e.target.value)} />
+                    <h3>{idioma === 'es' ? 'Gestión de Pacientes' : 'Patient Management'}</h3>
+                    <input 
+                      placeholder="🔍 Buscar..." 
+                      style={{ ...inputStyle, width: '250px' }} 
+                      onChange={(e) => setBusquedaAdmin(e.target.value)} 
+                    />
                   </div>
+
+                  {/* FORMULARIO MEJORADO CON ALERGIAS */}
                   <form onSubmit={guardarPaciente} style={formStyle}>
-                    <input placeholder="Nombre" style={inputStyle} value={nuevoPaciente.nombre} onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, nombre: e.target.value })} required />
-                    <input placeholder="DNI" style={inputStyle} value={nuevoPaciente.dni} onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, dni: e.target.value })} required />
-                    <input placeholder="WhatsApp" style={inputStyle} value={nuevoPaciente.telefono} onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, telefono: e.target.value })} required />
-                    <button type="submit" style={btnLarge}>{nuevoPaciente.id ? '💾 Actualizar' : '➕ Añadir'}</button>
-                    {nuevoPaciente.id && <button type="button" onClick={() => setNuevoPaciente({ id: null, nombre: '', dni: '', telefono: '' })} style={{ marginLeft: '10px' }}>Cancelar</button>}
+                    <input 
+                      placeholder={TEXTOS[idioma].nombre} 
+                      style={inputStyle} 
+                      value={nuevoPaciente.nombre} 
+                      onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, nombre: e.target.value })} 
+                      required 
+                    />
+                    <input 
+                      placeholder={TEXTOS[idioma].placeholderDni} 
+                      style={inputStyle} 
+                      value={nuevoPaciente.dni} 
+                      onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, dni: e.target.value })} 
+                      required 
+                    />
+      
+                    <div style={{ display: 'flex', gap: '5px' }}>
+                      <select 
+                        value={prefijo} 
+                        onChange={(e) => setPrefijo(e.target.value)}
+                        style={{ ...inputStyle, width: '80px', padding: '5px' }}
+                      >
+                        {CODIGOS_PAIS.map(p => (
+                          <option key={p.codigo} value={p.codigo}>{p.bandera} +{p.codigo}</option>
+                        ))}
+                      </select>
+                      <input 
+                        placeholder="WhatsApp" 
+                        style={{ ...inputStyle, flex: 1 }} 
+                        value={nuevoPaciente.telefono} 
+                        onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, telefono: e.target.value })} 
+                        required 
+                      />
+                    </div>
+
+                    {/* CAMPO DE ALERGIAS (Punto clave) */}
+                    <input 
+                      placeholder={idioma === 'es' ? "Alergias / Advertencias" : "Allergies / Warnings"} 
+                      style={{ 
+                        ...inputStyle, 
+                        width: '100%', 
+                        border: nuevoPaciente.alergias ? '1px solid #ff4444' : 'none',
+                        backgroundColor: nuevoPaciente.alergias ? '#fff5f5' : '#fff' 
+                      }} 
+                      value={nuevoPaciente.alergias} 
+                      onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, alergias: e.target.value })} 
+                    />
+
+                    <button 
+                      type="submit" 
+                      disabled={!esValido()} 
+                      style={{ ...btnLarge, backgroundColor: esValido() ? '#4CAF50' : '#555' }}
+                    >
+                      {nuevoPaciente.id 
+                        ? '💾 ' + (idioma === 'es' ? 'Actualizar' : 'Update') 
+                        : '➕ ' + (idioma === 'es' ? 'Añadir' : 'Add')}
+                    </button>
+      
+                    {nuevoPaciente.id && (
+                      <button 
+                        type="button" 
+                        onClick={() => setNuevoPaciente({ id: null, nombre: '', dni: '', telefono: '', alergias: '' })} 
+                        style={{ marginLeft: '10px', background: 'none', color: 'gray', border: 'none', cursor: 'pointer' }}
+                      >
+                        {TEXTOS[idioma].volver}
+                      </button>
+                    )}
                   </form>
+
                   <table border="1" style={tableStyle}>
-                    <thead><tr><th>Nombre</th><th>DNI</th><th>Acciones</th></tr></thead>
+                    <thead>
+                      <tr>
+                        <th>{idioma === 'es' ? 'Nombre' : 'Name'}</th>
+                        <th>{TEXTOS[idioma].placeholderDni}</th>
+                        <th>{idioma === 'es' ? 'Acciones' : 'Actions'}</th>
+                      </tr>
+                    </thead>
                     <tbody>
-                      {pacientes.filter(p => p.nombre.toLowerCase().includes(busquedaAdmin.toLowerCase()) || p.dni.includes(busquedaAdmin)).map(p => (
-                        <tr key={p.id}>
-                          <td>{p.nombre}</td><td>{p.dni}</td>
-                          <td>
-                            <button onClick={() => setNuevoPaciente(p)} style={{ color: 'orange', marginRight: '10px', background: 'none', border: 'none', cursor: 'pointer' }}>✏️ Editar</button>
-                            <button onClick={() => eliminarPaciente(p.id)} style={{ color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}>🗑️ Borrar</button>
-                          </td>
-                        </tr>
-                      ))}
+                      {pacientes
+                        .filter(p => p.nombre.toLowerCase().includes(busquedaAdmin.toLowerCase()) || p.dni.includes(busquedaAdmin))
+                        .map(p => (
+                          <tr key={p.id}>
+                            <td style={{ padding: '10px' }}>{p.nombre}</td>
+                            <td>{p.dni}</td>
+                            <td>
+                              <button 
+                                onClick={() => verHistoriaClinica(p)} 
+                                style={{ color: '#2196F3', marginRight: '10px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}
+                                title={idioma === 'es' ? "Ver Historia Clínica" : "View Medical History"}
+                              >
+                                📄
+                              </button>
+                              <button onClick={() => setNuevoPaciente(p)} style={{ color: 'orange', marginRight: '10px', background: 'none', border: 'none', cursor: 'pointer' }}>✏️</button>
+                              <button onClick={() => eliminarPaciente(p.id)} style={{ color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}>🗑️</button>
+                            </td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                 </section>
@@ -492,12 +721,56 @@ function App() {
                     <input placeholder="🔍 Buscar..." style={{ ...inputStyle, width: '250px' }} onChange={(e) => setBusquedaAdmin(e.target.value)} />
                   </div>
                   <form onSubmit={guardarMedico} style={formStyle}>
-                    <input placeholder="Nombre" style={inputStyle} value={nuevoMedico.nombre} onChange={(e) => setNuevoMedico({ ...nuevoMedico, nombre: e.target.value })} required />
-                    <input placeholder="Especialidad" style={inputStyle} value={nuevoMedico.especialidad} onChange={(e) => setNuevoMedico({ ...nuevoMedico, especialidad: e.target.value })} required />
-                    <input placeholder="Matrícula" style={inputStyle} value={nuevoMedico.matricula} onChange={(e) => setNuevoMedico({ ...nuevoMedico, matricula: e.target.value })} required />
-                    <input placeholder="Teléfono" style={inputStyle} value={nuevoMedico.telefono} onChange={(e) => setNuevoMedico({ ...nuevoMedico, telefono: e.target.value })} required />
-                    <button type="submit" style={btnLarge}>{nuevoMedico.id ? '💾 Actualizar' : '➕ Añadir'}</button>
-                    {nuevoMedico.id && <button type="button" onClick={() => setNuevoMedico({ id: null, nombre: '', especialidad: '', telefono: '', matricula: '' })} style={{ marginLeft: '10px' }}>Cancelar</button>}
+                    <input 
+                      placeholder={idioma === 'es' ? "Nombre del Médico" : "Doctor's Name"} 
+                      style={inputStyle} 
+                      value={nuevoMedico.nombre} 
+                      onChange={(e) => setNuevoMedico({ ...nuevoMedico, nombre: e.target.value })} 
+                      required 
+                    />
+                    <input 
+                      placeholder={idioma === 'es' ? "Especialidad" : "Specialty"} 
+                      style={inputStyle} 
+                      value={nuevoMedico.especialidad} 
+                      onChange={(e) => setNuevoMedico({ ...nuevoMedico, especialidad: e.target.value })} 
+                      required 
+                    />
+                    <input 
+                      placeholder={idioma === 'es' ? "Matrícula" : "Medical License"} 
+                      style={inputStyle} 
+                      value={nuevoMedico.matricula} 
+                      onChange={(e) => setNuevoMedico({ ...nuevoMedico, matricula: e.target.value })} 
+                      required 
+                    />
+                    <input 
+                      placeholder={idioma === 'es' ? "Consultorio / Piso" : "Office / Floor"} 
+                      style={inputStyle} 
+                      value={nuevoMedico.consultorio} 
+                      onChange={(e) => setNuevoMedico({ ...nuevoMedico, consultorio: e.target.value })} 
+                    />
+                    <input 
+                      placeholder={idioma === 'es' ? "Teléfono" : "Phone"} 
+                      style={inputStyle} 
+                      value={nuevoMedico.telefono} 
+                      onChange={(e) => setNuevoMedico({ ...nuevoMedico, telefono: e.target.value })} 
+                      required 
+                    />
+
+                    <button type="submit" style={btnLarge}>
+                      {nuevoMedico.id 
+                        ? (idioma === 'es' ? '💾 Actualizar' : '💾 Update') 
+                        : (idioma === 'es' ? '➕ Añadir' : '➕ Add')}
+                      </button>
+  
+                      {nuevoMedico.id && (
+                        <button 
+                          type="button" 
+                          onClick={() => setNuevoMedico({ id: null, nombre: '', especialidad: '', telefono: '', matricula: '', consultorio: '' })} 
+                          style={{ marginLeft: '10px', background: 'none', color: 'gray', border: 'none', cursor: 'pointer' }}
+                        >
+                          {idioma === 'es' ? 'Cancelar' : 'Cancel'}
+                        </button>
+                      )}
                   </form>
                   <table border="1" style={tableStyle}>
                     <thead><tr><th>Médico</th><th>Matrícula</th><th>Acciones</th></tr></thead>
@@ -513,6 +786,23 @@ function App() {
                       ))}
                     </tbody>
                   </table>
+                </section>
+              )}
+
+              {/* --- VISTA SALA DE ESPERA (MODO TV) --- */}
+              {vista === 'tv' && (
+                <section style={{ backgroundColor: '#000', minHeight: '80vh', padding: '40px', borderRadius: '20px', textAlign: 'center' }}>
+                  <h2 style={{ color: '#4CAF50', fontSize: '40px', marginBottom: '40px' }}>{idioma === 'es' ? 'SALA DE ESPERA' : 'WAITING ROOM'}</h2>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', fontSize: '30px', fontWeight: 'bold' }}>
+                    <div style={{ color: '#aaa', borderBottom: '1px solid #444' }}>{idioma === 'es' ? 'PACIENTE' : 'PATIENT'}</div>
+                    <div style={{ color: '#aaa', borderBottom: '1px solid #444' }}>{idioma === 'es' ? 'CONSULTORIO' : 'OFFICE'}</div>
+                    {turnos.filter(t => t.fecha === hoy && t.estado === 'Confirmado').map(t => (
+                      <React.Fragment key={t.id}>
+                        <div style={{ padding: '20px', borderBottom: '1px solid #222' }}>{t.paciente}</div>
+                        <div style={{ padding: '20px', borderBottom: '1px solid #222', color: '#4CAF50' }}>{t.consultorio || 'S/D'}</div>
+                      </React.Fragment>
+                    ))}
+                  </div>
                 </section>
               )}
             </>
@@ -538,7 +828,14 @@ function App() {
                   {turnos.filter(t => Number(t.paciente_id) === Number(pacienteEncontrado?.id)).map(t => (
                     <div key={t.id} style={{ borderLeft: '4px solid #4CAF50', padding: '10px', backgroundColor: '#333', marginBottom: '10px' }}>
                       <p><b>{t.fecha} - {t.hora}hs</b></p>
-                      <p>Dr. {t.medico}</p>
+                      <p>
+                        Dr. {t.medico} 
+                        {t.consultorio && (
+                          <span style={{ color: '#4CAF50', marginLeft: '10px', fontSize: '14px' }}>
+                            📍 {idioma === 'es' ? 'Consultorio' : 'Office'}: {t.consultorio}
+                          </span>
+                        )}
+                      </p>
                       <p style={{ fontSize: '12px', color: '#4CAF50', fontWeight: 'bold' }}>Estado: {t.estado || 'Pendiente'}</p>
                     </div>
                   ))}
