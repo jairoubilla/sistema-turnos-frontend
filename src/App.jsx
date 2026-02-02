@@ -716,74 +716,97 @@ function App() {
 
               {vista === 'medicos' && (
                 <section>
+                  {/* CABECERA Y BUSCADOR */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                    <h3>Gestión Médicos</h3>
-                    <input placeholder="🔍 Buscar..." style={{ ...inputStyle, width: '250px' }} onChange={(e) => setBusquedaAdmin(e.target.value)} />
+                    <h3 style={{ color: '#4CAF50' }}>👨‍⚕️ {idioma === 'es' ? 'Gestión de Médicos' : 'Doctor Management'}</h3>
+                    <input 
+                      placeholder="🔍 Buscar médico..." 
+                      style={{ ...inputStyle, width: '250px' }} 
+                      onChange={(e) => setBusquedaAdmin(e.target.value)} 
+                    />
                   </div>
-                  <form onSubmit={guardarMedico} style={formStyle}>
-                    <input 
-                      placeholder={idioma === 'es' ? "Nombre del Médico" : "Doctor's Name"} 
-                      style={inputStyle} 
-                      value={nuevoMedico.nombre} 
-                      onChange={(e) => setNuevoMedico({ ...nuevoMedico, nombre: e.target.value })} 
-                      required 
-                    />
-                    <input 
-                      placeholder={idioma === 'es' ? "Especialidad" : "Specialty"} 
-                      style={inputStyle} 
-                      value={nuevoMedico.especialidad} 
-                      onChange={(e) => setNuevoMedico({ ...nuevoMedico, especialidad: e.target.value })} 
-                      required 
-                    />
-                    <input 
-                      placeholder={idioma === 'es' ? "Matrícula" : "Medical License"} 
-                      style={inputStyle} 
-                      value={nuevoMedico.matricula} 
-                      onChange={(e) => setNuevoMedico({ ...nuevoMedico, matricula: e.target.value })} 
-                      required 
-                    />
-                    <input 
-                      placeholder={idioma === 'es' ? "Consultorio / Piso" : "Office / Floor"} 
-                      style={inputStyle} 
-                      value={nuevoMedico.consultorio} 
-                      onChange={(e) => setNuevoMedico({ ...nuevoMedico, consultorio: e.target.value })} 
-                    />
-                    <input 
-                      placeholder={idioma === 'es' ? "Teléfono" : "Phone"} 
-                      style={inputStyle} 
-                      value={nuevoMedico.telefono} 
-                      onChange={(e) => setNuevoMedico({ ...nuevoMedico, telefono: e.target.value })} 
-                      required 
-                    />
 
-                    <button type="submit" style={btnLarge}>
-                      {nuevoMedico.id 
-                        ? (idioma === 'es' ? '💾 Actualizar' : '💾 Update') 
-                        : (idioma === 'es' ? '➕ Añadir' : '➕ Add')}
-                      </button>
-  
-                      {nuevoMedico.id && (
-                        <button 
-                          type="button" 
-                          onClick={() => setNuevoMedico({ id: null, nombre: '', especialidad: '', telefono: '', matricula: '', consultorio: '' })} 
-                          style={{ marginLeft: '10px', background: 'none', color: 'gray', border: 'none', cursor: 'pointer' }}
-                        >
-                          {idioma === 'es' ? 'Cancelar' : 'Cancel'}
+                  {/* FORMULARIO DE CARGA (Aquí es donde cargas los nuevos) */}
+                  <div style={{ backgroundColor: '#2a2a2a', padding: '20px', borderRadius: '15px', marginBottom: '30px', border: '1px solid #444' }}>
+                    <h4 style={{ marginTop: 0 }}>{nuevoMedico.id ? '📝 Editar Médico' : '➕ Registrar Nuevo Médico'}</h4>
+                    <form onSubmit={guardarMedico} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      <input 
+                        placeholder={idioma === 'es' ? "Nombre Completo" : "Full Name"} 
+                        style={inputStyle} 
+                        value={nuevoMedico.nombre} 
+                        onChange={(e) => setNuevoMedico({ ...nuevoMedico, nombre: e.target.value })} 
+                        required 
+                      />
+                      <input 
+                        placeholder={idioma === 'es' ? "Especialidad" : "Specialty"} 
+                        style={inputStyle} 
+                        value={nuevoMedico.especialidad} 
+                        onChange={(e) => setNuevoMedico({ ...nuevoMedico, especialidad: e.target.value })} 
+                        required 
+                      />
+                      <input 
+                        placeholder={idioma === 'es' ? "Matrícula" : "License Number"} 
+                        style={inputStyle} 
+                        value={nuevoMedico.matricula} 
+                        onChange={(e) => setNuevoMedico({ ...nuevoMedico, matricula: e.target.value })} 
+                        required 
+                      />
+                      <input 
+                        placeholder={idioma === 'es' ? "Consultorio / Piso" : "Office / Floor"} 
+                        style={inputStyle} 
+                        value={nuevoMedico.consultorio} 
+                        onChange={(e) => setNuevoMedico({ ...nuevoMedico, consultorio: e.target.value })} 
+                      />
+                      <input 
+                        placeholder={idioma === 'es' ? "Teléfono" : "Phone"} 
+                        style={inputStyle} 
+                        value={nuevoMedico.telefono} 
+                        onChange={(e) => setNuevoMedico({ ...nuevoMedico, telefono: e.target.value })} 
+                        required 
+                      />
+
+                      <div style={{ gridColumn: 'span 2', display: 'flex', gap: '10px' }}>
+                        <button type="submit" style={{ ...btnLarge, flex: 1 }}>
+                          {nuevoMedico.id ? '💾 ' + (idioma === 'es' ? 'Actualizar' : 'Update') : '🚀 ' + (idioma === 'es' ? 'Registrar' : 'Register')}
                         </button>
-                      )}
-                  </form>
+          
+                        {nuevoMedico.id && (
+                          <button 
+                            type="button" 
+                            onClick={() => setNuevoMedico({ id: null, nombre: '', especialidad: '', telefono: '', matricula: '', consultorio: '' })} 
+                            style={{ padding: '10px', background: '#444', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer' }}
+                          >
+                            {idioma === 'es' ? 'Cancelar' : 'Cancel'}
+                          </button>
+                        )}
+                      </div>
+                    </form>
+                  </div>
+
+                  {/* TABLA DE MÉDICOS EXISTENTES */}
                   <table border="1" style={tableStyle}>
-                    <thead><tr><th>Médico</th><th>Matrícula</th><th>Acciones</th></tr></thead>
+                    <thead>
+                      <tr>
+                        <th>{idioma === 'es' ? 'Médico' : 'Doctor'}</th>
+                        <th>{idioma === 'es' ? 'Especialidad' : 'Specialty'}</th>
+                        <th>{idioma === 'es' ? 'Consultorio' : 'Office'}</th>
+                        <th>{idioma === 'es' ? 'Acciones' : 'Actions'}</th>
+                      </tr>
+                    </thead>
                     <tbody>
-                      {medicos.filter(m => m.nombre.toLowerCase().includes(busquedaAdmin.toLowerCase())).map(m => (
-                        <tr key={m.id}>
-                          <td>{m.nombre}</td><td>{m.matricula}</td>
-                          <td>
-                            <button onClick={() => { setNuevoMedico(m); window.scrollTo(0,0); }} style={{ color: 'orange', marginRight: '10px', background: 'none', border: 'none', cursor: 'pointer' }}>✏️ Editar</button>
-                            <button onClick={() => eliminarMedico(m.id)} style={{ color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}>🗑️ Borrar</button>
-                          </td>
-                        </tr>
-                      ))}
+                      {medicos
+                        .filter(m => m.nombre.toLowerCase().includes(busquedaAdmin.toLowerCase()))
+                        .map(m => (
+                          <tr key={m.id}>
+                            <td style={{ padding: '10px' }}>{m.nombre}</td>
+                            <td>{m.especialidad}</td>
+                            <td style={{ textAlign: 'center' }}>{m.consultorio || '--'}</td>
+                            <td>
+                              <button onClick={() => { setNuevoMedico(m); window.scrollTo(0,0); }} style={{ color: 'orange', marginRight: '10px', background: 'none', border: 'none', cursor: 'pointer' }}>✏️</button>
+                              <button onClick={() => eliminarMedico(m.id)} style={{ color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}>🗑️</button>
+                            </td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                 </section>
