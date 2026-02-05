@@ -173,7 +173,7 @@ function App() {
       if (nuevoMedico.id) { await axios.put(`${url}/${nuevoMedico.id}`, datosParaEnviar); }
       else { await axios.post(url, datosParaEnviar); }
       alert("Médico procesado");
-      setNuevoMedico({ id: null, nombre: '', especialidad: '', telefono: '', matricula: '' });
+      setNuevoMedico({ id: null, nombre: '', especialidad: '', telefono: '', matricula: '', consultorio: '' });
       obtenerDatos();
     } catch (err) { alert("Error en médico") }
   };
@@ -813,19 +813,37 @@ function App() {
               )}
 
               {/* --- VISTA SALA DE ESPERA (MODO TV) --- */}
+              {/* --- BUSCÁ ESTA PARTE EN TU App.jsx --- */}
               {vista === 'tv' && (
-                <section style={{ backgroundColor: '#000', minHeight: '80vh', padding: '40px', borderRadius: '20px', textAlign: 'center' }}>
-                  <h2 style={{ color: '#4CAF50', fontSize: '40px', marginBottom: '40px' }}>{idioma === 'es' ? 'SALA DE ESPERA' : 'WAITING ROOM'}</h2>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', fontSize: '30px', fontWeight: 'bold' }}>
-                    <div style={{ color: '#aaa', borderBottom: '1px solid #444' }}>{idioma === 'es' ? 'PACIENTE' : 'PATIENT'}</div>
-                    <div style={{ color: '#aaa', borderBottom: '1px solid #444' }}>{idioma === 'es' ? 'CONSULTORIO' : 'OFFICE'}</div>
-                    {turnos.filter(t => t.fecha === hoy && t.estado === 'Confirmado').map(t => (
-                      <React.Fragment key={t.id}>
-                        <div style={{ padding: '20px', borderBottom: '1px solid #222' }}>{t.paciente}</div>
-                        <div style={{ padding: '20px', borderBottom: '1px solid #222', color: '#4CAF50' }}>{t.consultorio || 'S/D'}</div>
-                      </React.Fragment>
-                    ))}
+                <section style={{ backgroundColor: '#000', minHeight: '100vh', padding: '40px', textAlign: 'center', color: 'white' }}>
+                  <h2 style={{ color: '#4CAF50', fontSize: '50px', marginBottom: '40px' }}>SALA DE ESPERA</h2>
+    
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', fontSize: '35px' }}>
+                    <div style={{ borderBottom: '2px solid #444', color: '#aaa' }}>PACIENTE</div>
+                    <div style={{ borderBottom: '2px solid #444', color: '#aaa' }}>CONSULTORIO</div>
+
+                    {/* FILTRO FLEXIBLE: Solo por fecha de hoy */}
+                    {turnos
+                      .filter(t => t.fecha === hoy) 
+                      .map(t => (
+                        <React.Fragment key={t.id}>
+                          <div style={{ padding: '20px', borderBottom: '1px solid #222' }}>
+                            {t.paciente} 
+                          </div>
+                          <div style={{ padding: '20px', borderBottom: '1px solid #222', color: '#4CAF50' }}>
+                            {t.consultorio || '---'}
+                          </div>
+                        </React.Fragment>
+                      ))
+                    }
                   </div>
+
+                  {/* AVISO SI NO HAY NADA (Para que no se vea negro total) */}
+                  {turnos.filter(t => t.fecha === hoy).length === 0 && (
+                    <div style={{ marginTop: '100px', color: '#444' }}>
+                      <h3>No hay turnos para la fecha: {hoy}</h3>
+                    </div>
+                  )}
                 </section>
               )}
             </>
