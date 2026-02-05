@@ -824,14 +824,22 @@ function App() {
 
                     {/* FILTRO FLEXIBLE: Solo por fecha de hoy */}
                     {turnos
-                      .filter(t => t.fecha === hoy) 
+                      .filter(t => {
+                        // 1. Limpiamos la fecha que viene de la base de datos (t.fecha)
+                        const fechaTurno = t.fecha ? t.fecha.split('T')[0] : "";
+                        // 2. Limpiamos la fecha de hoy
+                        const fechaHoy = hoy.split('T')[0];
+    
+                        // Solo mostramos si coinciden las fechas Y el estado es Confirmado o Atendido
+                        return fechaTurno === fechaHoy && (t.estado === 'Confirmado' || t.estado === 'Atendido');
+                      }) 
                       .map(t => (
                         <React.Fragment key={t.id}>
-                          <div style={{ padding: '20px', borderBottom: '1px solid #222' }}>
+                          <div style={{ padding: '25px', borderBottom: '2px solid #222', fontSize: '30px', fontWeight: 'bold' }}>
                             {t.paciente} 
                           </div>
-                          <div style={{ padding: '20px', borderBottom: '1px solid #222', color: '#4CAF50' }}>
-                            {t.consultorio || '---'}
+                          <div style={{ padding: '25px', borderBottom: '2px solid #222', color: '#4CAF50', fontSize: '30px', fontWeight: 'bold' }}>
+                            {t.consultorio || 'S/D'}
                           </div>
                         </React.Fragment>
                       ))
