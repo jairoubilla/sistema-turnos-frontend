@@ -2,6 +2,27 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import React from 'react'
+import logoAITurnos from './assets/logo.png'
+
+// ==========================================
+// 1. ESTILOS (Ordenados para que no molesten abajo)
+// ==========================================
+const btnLarge = { padding: '15px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' };
+const inputStyle = { padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#fff', color: '#000' };
+const btnTab = (active) => ({ padding: '10px 20px', cursor: 'pointer', backgroundColor: active ? '#4CAF50' : '#333', color: 'white', border: 'none', marginRight: '5px', borderRadius: '5px' });
+const tableStyle = { width: '100%', borderCollapse: 'collapse', textAlign: 'left', backgroundColor: '#333' };
+const formStyle = { display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' };
+const cardStyle = { backgroundColor: '#2a2a2a', padding: '15px', borderRadius: '10px', textAlign: 'center', flex: '1' };
+
+const containerLoginStyle = { display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '50px' };
+const cardLoginStyle = { backgroundColor: '#2a2a2a', padding: '40px', borderRadius: '20px', maxWidth: '400px', width: '100%', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', textAlign: 'center', border: '1px solid #333' };
+const inputLoginStyle = { width: '100%', padding: '15px', marginBottom: '20px', borderRadius: '10px', border: 'none', backgroundColor: '#1a1a1a', color: 'white', fontSize: '16px', textAlign: 'center' };
+const btnIngresarStyle = { width: '100%', padding: '15px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '16px' };
+
+const selectEstadoStyle = (estado) => ({ 
+  padding: '6px 10px', borderRadius: '20px', border: 'none', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', color: 'white',
+  backgroundColor: estado === 'Confirmado' ? '#2e7d32' : estado === 'Atendido' ? '#1565c0' : estado === 'Cancelado' ? '#c62828' : '#666'
+});
 
 function App() {
   // ==========================================
@@ -88,6 +109,15 @@ function App() {
 
   // Esado para el idioma
   const [idioma, setIdioma] = useState('es')
+
+  // Estados para controlar qué se ve
+  const [cargando, setCargando] = useState(true) // Para el Splash Screen
+
+  // Efecto para quitar la pantalla de carga después de 3 segundos
+  useEffect(() => {
+    const timer = setTimeout(() => setCargando(false), 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // ==========================================
   // 2. CARGA DE DATOS
@@ -327,598 +357,626 @@ function App() {
   // 4. RENDERIZADO
   // ==========================================
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial', backgroundColor: '#1a1a1a', color: 'white', minHeight: '100vh' }}>
-
-      {/* Selector de idioma - Solo visible si no se ha logueado nadie */}
-      {!rol && (
-        <div style={{ textAlign: 'right', marginBottom: '10px' }}>
-          <button onClick={() => setIdioma('es')} style={{ background: idioma === 'es' ? '#444' : 'none', border: 'none', color: 'white', cursor: 'pointer', padding: '5px', borderRadius: '5px', marginRight: '10px '}}>🇪🇸 ES</button>
-          <button onClick={() => setIdioma('en')} style={{ background: idioma === 'en' ? '#444' : 'none', border: 'none', color: 'white', cursor: 'pointer', padding: '5px', borderRadius: '5px' }}>🇺🇸 EN</button>
+    <>
+      {/* Capa de splash screen */}
+      {cargando && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, width: '100%', height: '100%',
+          backgroundColor: '#000',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999
+        }}>
+          <img 
+            src={logoAITurnos}
+            alt="AITurnos Logo"
+            style={{
+              width: '300px',
+              animation: 'pulso 2s infinite ease-in-out'
+            }}
+          />
         </div>
       )}
-      {!rol ? (
-        <div style={{ textAlign: 'center', marginTop: '50px' }}>
-          <h1>{TEXTOS[idioma].titulo}</h1>
-          <div style={{ backgroundColor: '#2a2a2a', padding: '30px', borderRadius: '20px', maxWidth: '350px', margin: '0 auto' }}>
+
+
+      <div style={{ padding: '20px', fontFamily: 'Arial', backgroundColor: '#1a1a1a', color: 'white', minHeight: '100vh' }}>
+
+        {/* Selector de idioma - Solo visible si no se ha logueado nadie */}
+        {!rol && (
+          <div style={{ textAlign: 'right', marginBottom: '10px' }}>
+            <button onClick={() => setIdioma('es')} style={{ background: idioma === 'es' ? '#444' : 'none', border: 'none', color: 'white', cursor: 'pointer', padding: '5px', borderRadius: '5px', marginRight: '10px '}}>🇪🇸 ES</button>
+            <button onClick={() => setIdioma('en')} style={{ background: idioma === 'en' ? '#444' : 'none', border: 'none', color: 'white', cursor: 'pointer', padding: '5px', borderRadius: '5px' }}>🇺🇸 EN</button>
+          </div>
+        )}
+
+        {!rol ? (
+          <div style={{ textAlign: 'center', marginTop: '50px' }}>
+            <h1>{TEXTOS[idioma].titulo}</h1>
+            <div style={{ backgroundColor: '#2a2a2a', padding: '30px', borderRadius: '20px', maxWidth: '350px', margin: '0 auto' }}>
             
-            {!mostrarRegistro ? (
+              {!mostrarRegistro ? (
 
-              // Vista de login
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                <h3>{TEXTOS[idioma].ingresar}</h3>
-                <input 
-                  placeholder={TEXTOS[idioma].placeholderDni} 
-                  style={inputStyle} 
-                  value={busquedaDni} 
-                  onChange={(e) => setBusquedaDni(e.target.value)} 
-                />
-                <button onClick={buscarPaciente} style={btnLarge}>{TEXTOS[idioma].ingresar}</button>
-                <button onClick={() => setRol('admin_login')} style={{ background: 'none', color: '#4CAF50', border: 'none', cursor: 'pointer' }}>Acceso Admin</button>
-              </div>
-            ) : (
-
-              //Vista de registro
-              <form onSubmit={guardarPaciente} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <h3>{TEXTOS[idioma].crear}</h3>
-                <input 
-                  placeholder={TEXTOS[idioma].nombre}
-                  style={inputStyle} 
-                  value={nuevoPaciente.nombre} 
-                  onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, nombre: e.target.value })} 
-                  required 
-                />
-                <input value={busquedaDni} readOnly style={{ ...inputStyle, backgroundColor: '#444' }} />
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <div style={{ display: 'flex', gap: '5px' }}>   
-                    {/* SELECTOR DE BANDERAS */}
-                    <select 
-                      value={prefijo} 
-                      onChange={(e) => setPrefijo(e.target.value)}
-                      style={{ ...inputStyle, width: '90px', padding: '5px', fontSize: '14px' }}
-                    >
-                      {CODIGOS_PAIS.map(p => (
-                        <option key={p.codigo} value={p.codigo}>{p.bandera} +{p.codigo}</option>
-                      ))}
-                    </select>
-    
-                    {/* CAMPO DE NÚMERO */}
-                    <input 
-                      placeholder={TEXTOS[idioma].whatsapp}
-                      style={{ ...inputStyle, flex: 1 }} 
-                      value={nuevoPaciente.telefono} 
-                      onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, telefono: e.target.value })} 
-                      required 
-                    />
-                  </div>
-                  <span style={{ fontSize: '10px', color: '#aaa' }}>
-                    {TEXTOS[idioma].ayudaTel}
-                  </span>
-                </div>
-
-                <input 
-                  placeholder={idioma === 'es' ? "Alergias (Ej: Penicilina, ninguna)" : "Allergies (Ex: Penicillin, none)"} 
-                  style={{ ...inputStyle, border: nuevoPaciente.alergias ? '1px solid #ff4444' : 'none' }} 
-                  value={nuevoPaciente.alergias} 
-                  onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, alergias: e.target.value })} 
-                />
-
-                <button 
-                  type="submit" 
-                  disabled={!esValido()} 
-                  style={{ ...btnLarge, backgroundColor: esValido() ? '#4CAF50' : '#555', cursor: esValido() ? 'pointer' : 'not-allowed', opacity: esValido() ? 1 : 0.6 }}
-                >
-                  {TEXTOS[idioma].confirmar}
-                </button>
-
-                {!esValido() && (
-                  <span style={{fontSize: '10px', color: '#ff4444', textAlign: 'center' }}>
-                    {idioma === 'es'
-                      ? '* Completa nombre, apellido y DNI (min. 6 carac.)'
-                      : '* Fill in full name and ID (min. 6 char.)'}
-                  </span>
-                )}
-
-                <button type="button" onClick={() => setMostrarRegistro(false)} style={{ background: 'none', color: 'gray', border: 'none', cursor: 'pointer' }}>
-                  {TEXTOS[idioma].volver}
-                </button>
-              </form>
-            )}
-          </div>
-        </div>
-      ) : rol === 'admin_login' ? (
-        <div style={{ textAlign: 'center', marginTop: '50px' }}>
-          <div style={{ backgroundColor: '#2a2a2a', padding: '30px', borderRadius: '20px', maxWidth: '350px', margin: '0 auto' }}>
-            <h3> Clave Admin</h3>
-            <input type="password" placeholder="Clave" style={inputStyle} value={passwordAdmin} onChange={(e) => setPasswordAdmin(e.target.value)} />
-            <button onClick={() => passwordAdmin === 'admin123' ? (setRol('admin'), setAutenticado(true)) : alert("Error")} style={btnLarge}>Entrar</button>
-            <button onClick={() => setRol(null)} style={{ background: 'none', color: 'gray', border: 'none', marginTop: '10px' }}>Cerrar</button>
-          </div>
-        </div>
-      ) : (
-
-        <div>
-          <button onClick={() => { setRol(null); setAutenticado(false); setPacienteEncontrado(null); }} style={{ marginBottom: '20px', cursor: 'pointer', padding: '10px', borderRadius: '5px', backgroundColor: '#444', color: 'white', border: 'none' }}>⬅️ Salir</button>
-
-          {rol === 'admin' && autenticado ? (
-            <>
-              {/* --- BARRA DE NAVEGACIÓN ADMIN (DENTRO DEL PANEL) --- */}
-              <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                <button onClick={() => setVista('turnos')} style={btnTab(vista === 'turnos')}>
-                  {idioma === 'es' ? 'Turnos' : 'Appointments'}
-                </button>
-                <button onClick={() => setVista('pacientes')} style={btnTab(vista === 'pacientes')}>
-                  {idioma === 'es' ? 'Pacientes' : 'Patients'}
-                </button>
-                <button onClick={() => setVista('medicos')} style={btnTab(vista === 'medicos')}>
-                  {idioma === 'es' ? 'Médicos' : 'Doctors'}
-                </button>
-                <button 
-                  onClick={() => setVista('tv')} 
-                  style={btnTab(vista === 'tv')}
-                >
-                  📺 {idioma === 'es' ? 'Modo TV' : 'TV Mode'}
-                </button>
-              </div>
-
-              {/* --- ESTADÍSTICAS RÁPIDAS Y HERRAMIENTAS (Admin) --- */}
-              <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', flexWrap: 'wrap' }}>
-                {/* Turnos totales del día */}
-                <div style={{ ...cardStyle, borderTop: '5px solid #4CAF50' }}>
-                  <h4 style={{ margin: 0, fontSize: '12px', color: '#aaa' }}>TURNOS HOY</h4>
-                  <p style={{ fontSize: '24px', fontWeight: 'bold', margin: '5px 0' }}>
-                    {turnos.filter(t => t.fecha === hoy).length}
-                  </p>
-                </div>
-
-                {/* Pacientes que ya pasaron por el consultorio hoy */}
-                <div style={{ ...cardStyle, borderTop: '5px solid #2196F3' }}>
-                  <h4 style={{ margin: 0, fontSize: '12px', color: '#aaa' }}>ATENDIDOS HOY</h4>
-                  <p style={{ fontSize: '24px', fontWeight: 'bold', margin: '5px 0', color: '#2196F3' }}>
-                    {turnos.filter(t => t.fecha === hoy && t.estado === 'Atendido').length}
-                  </p>
-                </div>
-
-                {/* Lo que queda pendiente en la sala de espera */}
-                <div style={{ ...cardStyle, borderTop: '5px solid #FFC107' }}>
-                  <h4 style={{ margin: 0, fontSize: '12px', color: '#aaa' }}>POR ATENDER</h4>
-                  <p style={{ fontSize: '24px', fontWeight: 'bold', margin: '5px 0', color: '#FFC107' }}>
-                    {turnos.filter(t => t.fecha === hoy && (t.estado === 'Pendiente' || t.estado === 'Confirmado')).length}
-                  </p>
-                </div>
-              </div>
-
-              {/* BOTÓN DE EXPORTACIÓN */}
-              <button
-                onClick={exportarExcel}
-                style={{
-                  ...btnLarge,
-                  backgroundColor: '#2E7D32',
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '10px'
-                }}
-              >
-                {idioma === 'es' ? 'Descargar Planilla Excel del Día' : 'Download Today\'s Excel Sheet'}
-              </button>
-
-              {vista === 'turnos' && (
-                <section>
+                // Vista de login
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  <h3>{TEXTOS[idioma].ingresar}</h3>
                   <input 
-                    placeholder="Buscar paciente o médico..." 
-                    style={{ ...inputStyle, width: '100%', marginBottom: '15px' }} 
-                    onChange={(e) => setBusquedaAdmin(e.target.value)} 
+                    placeholder={TEXTOS[idioma].placeholderDni} 
+                    style={inputStyle} 
+                    value={busquedaDni} 
+                    onChange={(e) => setBusquedaDni(e.target.value)} 
                   />
+                  <button onClick={buscarPaciente} style={btnLarge}>{TEXTOS[idioma].ingresar}</button>
+                  <button onClick={() => setRol('admin_login')} style={{ background: 'none', color: '#4CAF50', border: 'none', cursor: 'pointer' }}>Acceso Admin</button>
+                </div>
+              ) : (
 
-                  <table border="1" style={tableStyle}>
-                    <thead>
-                      <tr>
-                        <th>Paciente</th>
-                        <th>Médico</th>
-                        <th>Fecha</th>
-                        <th>Estado</th>
-                        <th>Acción</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {turnos
-                        .filter(t =>
-                          t.paciente?.toLowerCase().includes(busquedaAdmin.toLowerCase()) ||
-                          t.medico?.toLowerCase().includes(busquedaAdmin.toLowerCase)
-                        )
-                        .map(t => {
-                          const esHoy = t.fecha === hoy
-
-                        return (
-                          <tr 
-                            key={t.id} 
-                            style={{ 
-                              backgroundColor: esHoy ? '#3d3d3d' : 'transparent', // Un gris más claro si es hoy
-                              borderLeft: esHoy ? '4px solid #4CAF50' : 'none'    // Una sutil línea verde lateral
-                            }}
-                          >
-                            <td style={{ padding: '10px' }}>{t.paciente}</td>
-                            <td
-                              style={{
-                                cursor: 'pointer',
-                                color: '#4CAF50',
-                                fontWeight: 'bold',
-                                textDecoration: 'underline dotted'
-                              }}
-                              title={idioma === 'es' ? "Click para editar nota médica" : "Click to edit medical note"}
-                              onClick={() => {
-                                const nuevaNota = prompt(
-                                  idioma === 'es' ? "Evolucion / Nota médica para este turno:" : "Medical note for this appointment:",
-                                  t.motivo
-                                )
-
-                                // Si el usuario no cancela el prompt, guardamos la nota
-                                if (nuevaNota !== null) {
-                                  actualizarEstadoTurno(t.id, t.estado, nuevaNota)
-                                }
-                              }}
-                            >
-                              {t.medico}
-                            </td>
-                            <td>
-                              <span style={{ fontWeight: esHoy ? 'bold' : 'normal'}}>
-                                {t.fecha}
-                              </span>
-                            </td>
-                            <td>
-                              <select 
-                                value={t.estado} 
-                                onChange={(e) => actualizarEstadoTurno(t.id, e.target.value)} 
-                                style={selectEstadoStyle(t.estado)}
-                              >
-                                <option value="Pendiente">Pendiente</option>
-                                <option value="Confirmado">Confirmado</option>
-                                <option value="Atendido">Atendido</option>
-                                <option value="Cancelado">Cancelado</option>
-                              </select>
-                            </td>
-                            <td>
-                              <button 
-                                onClick={() => enviarRecordatorio(t)} 
-                                style={{ backgroundColor: '#25D366', color: 'white', border: 'none', padding: '5px', borderRadius: '5px', marginRight: '5px', cursor: 'pointer' }}
-                              >
-                                📲 Avisar
-                              </button>
-                              <button 
-                                onClick={() => eliminarTurno(t.id)} 
-                                style={{ color: '#F44336', border: 'none', background: 'none', cursor: 'pointer' }}
-                              >
-                                Borrar
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </section>
-              )}
-
-              {vista === 'pacientes' && (
-                <section>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                    <h3>{idioma === 'es' ? 'Gestión de Pacientes' : 'Patient Management'}</h3>
-                    <input 
-                      placeholder="🔍 Buscar..." 
-                      style={{ ...inputStyle, width: '250px' }} 
-                      onChange={(e) => setBusquedaAdmin(e.target.value)} 
-                    />
-                  </div>
-
-                  {/* FORMULARIO MEJORADO CON ALERGIAS */}
-                  <form onSubmit={guardarPaciente} style={formStyle}>
-                    <input 
-                      placeholder={TEXTOS[idioma].nombre} 
-                      style={inputStyle} 
-                      value={nuevoPaciente.nombre} 
-                      onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, nombre: e.target.value })} 
-                      required 
-                    />
-                    <input 
-                      placeholder={TEXTOS[idioma].placeholderDni} 
-                      style={inputStyle} 
-                      value={nuevoPaciente.dni} 
-                      onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, dni: e.target.value })} 
-                      required 
-                    />
-      
-                    <div style={{ display: 'flex', gap: '5px' }}>
+                //Vista de registro
+                <form onSubmit={guardarPaciente} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <h3>{TEXTOS[idioma].crear}</h3>
+                  <input 
+                    placeholder={TEXTOS[idioma].nombre}
+                    style={inputStyle} 
+                    value={nuevoPaciente.nombre} 
+                    onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, nombre: e.target.value })} 
+                    required 
+                  />
+                  <input value={busquedaDni} readOnly style={{ ...inputStyle, backgroundColor: '#444' }} />
+                
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                    <div style={{ display: 'flex', gap: '5px' }}>   
+                      {/* SELECTOR DE BANDERAS */}
                       <select 
                         value={prefijo} 
                         onChange={(e) => setPrefijo(e.target.value)}
-                        style={{ ...inputStyle, width: '80px', padding: '5px' }}
+                        style={{ ...inputStyle, width: '90px', padding: '5px', fontSize: '14px' }}
                       >
                         {CODIGOS_PAIS.map(p => (
                           <option key={p.codigo} value={p.codigo}>{p.bandera} +{p.codigo}</option>
                         ))}
                       </select>
+    
+                      {/* CAMPO DE NÚMERO */}
                       <input 
-                        placeholder="WhatsApp" 
+                        placeholder={TEXTOS[idioma].whatsapp}
                         style={{ ...inputStyle, flex: 1 }} 
                         value={nuevoPaciente.telefono} 
                         onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, telefono: e.target.value })} 
                         required 
                       />
                     </div>
+                    <span style={{ fontSize: '10px', color: '#aaa' }}>
+                      {TEXTOS[idioma].ayudaTel}
+                    </span>
+                  </div>
 
-                    {/* CAMPO DE ALERGIAS (Punto clave) */}
-                    <input 
-                      placeholder={idioma === 'es' ? "Alergias / Advertencias" : "Allergies / Warnings"} 
-                      style={{ 
-                        ...inputStyle, 
-                        width: '100%', 
-                        border: nuevoPaciente.alergias ? '1px solid #ff4444' : 'none',
-                        backgroundColor: nuevoPaciente.alergias ? '#fff5f5' : '#fff' 
-                      }} 
-                      value={nuevoPaciente.alergias} 
-                      onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, alergias: e.target.value })} 
-                    />
+                  <input 
+                    placeholder={idioma === 'es' ? "Alergias (Ej: Penicilina, ninguna)" : "Allergies (Ex: Penicillin, none)"} 
+                    style={{ ...inputStyle, border: nuevoPaciente.alergias ? '1px solid #ff4444' : 'none' }} 
+                    value={nuevoPaciente.alergias} 
+                    onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, alergias: e.target.value })} 
+                  />
 
-                    <button 
-                      type="submit" 
-                      disabled={!esValido()} 
-                      style={{ ...btnLarge, backgroundColor: esValido() ? '#4CAF50' : '#555' }}
-                    >
-                      {nuevoPaciente.id 
-                        ? '💾 ' + (idioma === 'es' ? 'Actualizar' : 'Update') 
-                        : '➕ ' + (idioma === 'es' ? 'Añadir' : 'Add')}
-                    </button>
-      
-                    {nuevoPaciente.id && (
-                      <button 
-                        type="button" 
-                        onClick={() => setNuevoPaciente({ id: null, nombre: '', dni: '', telefono: '', alergias: '' })} 
-                        style={{ marginLeft: '10px', background: 'none', color: 'gray', border: 'none', cursor: 'pointer' }}
-                      >
-                        {TEXTOS[idioma].volver}
-                      </button>
-                    )}
-                  </form>
+                  <button 
+                    type="submit" 
+                    disabled={!esValido()} 
+                    style={{ ...btnLarge, backgroundColor: esValido() ? '#4CAF50' : '#555', cursor: esValido() ? 'pointer' : 'not-allowed', opacity: esValido() ? 1 : 0.6 }}
+                  >
+                    {TEXTOS[idioma].confirmar}
+                  </button>
 
-                  <table border="1" style={tableStyle}>
-                    <thead>
-                      <tr>
-                        <th>{idioma === 'es' ? 'Nombre' : 'Name'}</th>
-                        <th>{TEXTOS[idioma].placeholderDni}</th>
-                        <th>{idioma === 'es' ? 'Acciones' : 'Actions'}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pacientes
-                        .filter(p => p.nombre.toLowerCase().includes(busquedaAdmin.toLowerCase()) || p.dni.includes(busquedaAdmin))
-                        .map(p => (
-                          <tr key={p.id}>
-                            <td style={{ padding: '10px' }}>{p.nombre}</td>
-                            <td>{p.dni}</td>
-                            <td>
-                              <button 
-                                onClick={() => verHistoriaClinica(p)} 
-                                style={{ color: '#2196F3', marginRight: '10px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}
-                                title={idioma === 'es' ? "Ver Historia Clínica" : "View Medical History"}
-                              >
-                                📄
-                              </button>
-                              <button onClick={() => setNuevoPaciente(p)} style={{ color: 'orange', marginRight: '10px', background: 'none', border: 'none', cursor: 'pointer' }}>✏️</button>
-                              <button onClick={() => eliminarPaciente(p.id)} style={{ color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}>🗑️</button>
-                            </td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </section>
+                  {!esValido() && (
+                    <span style={{fontSize: '10px', color: '#ff4444', textAlign: 'center' }}>
+                      {idioma === 'es'
+                        ? '* Completa nombre, apellido y DNI (min. 6 carac.)'
+                        : '* Fill in full name and ID (min. 6 char.)'}
+                    </span>
+                  )}
+
+                  <button type="button" onClick={() => setMostrarRegistro(false)} style={{ background: 'none', color: 'gray', border: 'none', cursor: 'pointer' }}>
+                    {TEXTOS[idioma].volver}
+                  </button>
+                </form>
               )}
+            </div>
+          </div>
+        ) : rol === 'admin_login' ? (
+          <div style={containerLoginStyle}>
+            <div style={cardLoginStyle}>
+              <img src={logoAITurnos} alt="Logo" style={{ width: '120px', marginBottom: '20px' }} />
+              
+              <h2 style={{ color: '#4CAF50', marginBottom: '20px' }}>Panel de Control</h2>
+              <p style={{ color: '#aaa', fontSize: '14px', marginBottom: '20px' }}>
+                Ingresa la clave de administrador para continuar
+              </p>
+      
+              <input 
+                type="password" 
+                placeholder="Escribe la clave aquí..." 
+                style={inputLoginStyle} 
+                value={passwordAdmin} 
+                onChange={(e) => setPasswordAdmin(e.target.value)} 
+                onKeyDown={(e) => e.key === 'Enter' && (passwordAdmin === 'admin123' ? (setRol('admin'), setAutenticado(true)) : alert("Clave incorrecta"))}
+              />
 
-              {vista === 'medicos' && (
-                <section>
-                  {/* CABECERA Y BUSCADOR */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                    <h3 style={{ color: '#4CAF50' }}>👨‍⚕️ {idioma === 'es' ? 'Gestión de Médicos' : 'Doctor Management'}</h3>
+              <button 
+                onClick={() => passwordAdmin === 'admin123' ? (setRol('admin'), setAutenticado(true)) : alert("Clave incorrecta")} 
+                style={btnIngresarStyle}
+              >
+                INGRESAR
+              </button>
+
+              <button 
+                onClick={() => setRol(null)} 
+                style={{ background: 'none', color: '#888', border: 'none', marginTop: '15px', cursor: 'pointer', fontSize: '14px' }}
+              >
+                {idioma === 'es' ? '← Volver al inicio' : '← Back to home'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            {rol === 'admin' && autenticado ? (
+              <>
+                {/* --- BARRA DE NAVEGACIÓN ADMIN (DENTRO DEL PANEL) --- */}
+                <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <button onClick={() => setVista('turnos')} style={btnTab(vista === 'turnos')}>
+                    {idioma === 'es' ? 'Turnos' : 'Appointments'}
+                  </button>
+                  <button onClick={() => setVista('pacientes')} style={btnTab(vista === 'pacientes')}>
+                    {idioma === 'es' ? 'Pacientes' : 'Patients'}
+                  </button>
+                  <button onClick={() => setVista('medicos')} style={btnTab(vista === 'medicos')}>
+                    {idioma === 'es' ? 'Médicos' : 'Doctors'}
+                  </button>
+                  <button 
+                    onClick={() => setVista('tv')} 
+                    style={btnTab(vista === 'tv')}
+                  >
+                    📺 {idioma === 'es' ? 'Modo TV' : 'TV Mode'}
+                  </button>
+                </div>
+
+                {/* --- ESTADÍSTICAS RÁPIDAS Y HERRAMIENTAS (Admin) --- */}
+                <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                  {/* Turnos totales del día */}
+                  <div style={{ ...cardStyle, borderTop: '5px solid #4CAF50' }}>
+                    <h4 style={{ margin: 0, fontSize: '12px', color: '#aaa' }}>TURNOS HOY</h4>
+                    <p style={{ fontSize: '24px', fontWeight: 'bold', margin: '5px 0' }}>
+                      {turnos.filter(t => t.fecha === hoy).length}
+                    </p>
+                  </div>
+
+                  {/* Pacientes que ya pasaron por el consultorio hoy */}
+                  <div style={{ ...cardStyle, borderTop: '5px solid #2196F3' }}>
+                    <h4 style={{ margin: 0, fontSize: '12px', color: '#aaa' }}>ATENDIDOS HOY</h4>
+                    <p style={{ fontSize: '24px', fontWeight: 'bold', margin: '5px 0', color: '#2196F3' }}>
+                      {turnos.filter(t => t.fecha === hoy && t.estado === 'Atendido').length}
+                    </p>
+                  </div>
+
+                  {/* Lo que queda pendiente en la sala de espera */}
+                  <div style={{ ...cardStyle, borderTop: '5px solid #FFC107' }}>
+                    <h4 style={{ margin: 0, fontSize: '12px', color: '#aaa' }}>POR ATENDER</h4>
+                    <p style={{ fontSize: '24px', fontWeight: 'bold', margin: '5px 0', color: '#FFC107' }}>
+                      {turnos.filter(t => t.fecha === hoy && (t.estado === 'Pendiente' || t.estado === 'Confirmado')).length}
+                    </p>
+                  </div>
+                </div>
+
+                {/* BOTÓN DE EXPORTACIÓN */}
+                <button
+                  onClick={exportarExcel}
+                  style={{
+                    ...btnLarge,
+                    backgroundColor: '#2E7D32',
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px'
+                  }}
+                >
+                  {idioma === 'es' ? 'Descargar Planilla Excel del Día' : 'Download Today\'s Excel Sheet'}
+                </button>
+
+                {vista === 'turnos' && (
+                  <section>
                     <input 
-                      placeholder="🔍 Buscar médico..." 
-                      style={{ ...inputStyle, width: '250px' }} 
+                      placeholder="Buscar paciente o médico..." 
+                      style={{ ...inputStyle, width: '100%', marginBottom: '15px' }} 
                       onChange={(e) => setBusquedaAdmin(e.target.value)} 
                     />
-                  </div>
 
-                  {/* FORMULARIO DE CARGA (Aquí es donde cargas los nuevos) */}
-                  <div style={{ backgroundColor: '#2a2a2a', padding: '20px', borderRadius: '15px', marginBottom: '30px', border: '1px solid #444' }}>
-                    <h4 style={{ marginTop: 0 }}>{nuevoMedico.id ? '📝 Editar Médico' : '➕ Registrar Nuevo Médico'}</h4>
-                    <form onSubmit={guardarMedico} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                      <input 
-                        placeholder={idioma === 'es' ? "Nombre Completo" : "Full Name"} 
-                        style={inputStyle} 
-                        value={nuevoMedico.nombre} 
-                        onChange={(e) => setNuevoMedico({ ...nuevoMedico, nombre: e.target.value })} 
-                        required 
-                      />
-                      <input 
-                        placeholder={idioma === 'es' ? "Especialidad" : "Specialty"} 
-                        style={inputStyle} 
-                        value={nuevoMedico.especialidad} 
-                        onChange={(e) => setNuevoMedico({ ...nuevoMedico, especialidad: e.target.value })} 
-                        required 
-                      />
-                      <input 
-                        placeholder={idioma === 'es' ? "Matrícula" : "License Number"} 
-                        style={inputStyle} 
-                        value={nuevoMedico.matricula} 
-                        onChange={(e) => setNuevoMedico({ ...nuevoMedico, matricula: e.target.value })} 
-                        required 
-                      />
-                      <input 
-                        placeholder={idioma === 'es' ? "Consultorio / Piso" : "Office / Floor"} 
-                        style={inputStyle} 
-                        value={nuevoMedico.consultorio} 
-                        onChange={(e) => setNuevoMedico({ ...nuevoMedico, consultorio: e.target.value })} 
-                      />
-                      <input 
-                        placeholder={idioma === 'es' ? "Teléfono" : "Phone"} 
-                        style={inputStyle} 
-                        value={nuevoMedico.telefono} 
-                        onChange={(e) => setNuevoMedico({ ...nuevoMedico, telefono: e.target.value })} 
-                        required 
-                      />
+                    <table border="1" style={tableStyle}>
+                      <thead>
+                        <tr>
+                          <th>Paciente</th>
+                          <th>Médico</th>
+                          <th>Fecha</th>
+                          <th>Estado</th>
+                          <th>Acción</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {turnos
+                          .filter(t =>
+                            t.paciente?.toLowerCase().includes(busquedaAdmin.toLowerCase()) ||
+                            t.medico?.toLowerCase().includes(busquedaAdmin.toLowerCase)
+                          )
+                          .map(t => {
+                            const esHoy = t.fecha === hoy
 
-                      <div style={{ gridColumn: 'span 2', display: 'flex', gap: '10px' }}>
-                        <button type="submit" style={{ ...btnLarge, flex: 1 }}>
-                          {nuevoMedico.id ? '💾 ' + (idioma === 'es' ? 'Actualizar' : 'Update') : '🚀 ' + (idioma === 'es' ? 'Registrar' : 'Register')}
-                        </button>
-          
-                        {nuevoMedico.id && (
-                          <button 
-                            type="button" 
-                            onClick={() => setNuevoMedico({ id: null, nombre: '', especialidad: '', telefono: '', matricula: '', consultorio: '' })} 
-                            style={{ padding: '10px', background: '#444', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer' }}
-                          >
-                            {idioma === 'es' ? 'Cancelar' : 'Cancel'}
-                          </button>
-                        )}
+                          return (
+                            <tr 
+                              key={t.id} 
+                              style={{ 
+                                backgroundColor: esHoy ? '#3d3d3d' : 'transparent', // Un gris más claro si es hoy
+                                borderLeft: esHoy ? '4px solid #4CAF50' : 'none'    // Una sutil línea verde lateral
+                              }}
+                            >
+                              <td style={{ padding: '10px' }}>{t.paciente}</td>
+                              <td
+                                style={{
+                                  cursor: 'pointer',
+                                  color: '#4CAF50',
+                                  fontWeight: 'bold',
+                                  textDecoration: 'underline dotted'
+                                }}
+                                title={idioma === 'es' ? "Click para editar nota médica" : "Click to edit medical note"}
+                                onClick={() => {
+                                  const nuevaNota = prompt(
+                                    idioma === 'es' ? "Evolucion / Nota médica para este turno:" : "Medical note for this appointment:",
+                                    t.motivo
+                                  )
+
+                                  // Si el usuario no cancela el prompt, guardamos la nota
+                                  if (nuevaNota !== null) {
+                                    actualizarEstadoTurno(t.id, t.estado, nuevaNota)
+                                  }
+                                }}
+                              >
+                                {t.medico}
+                              </td>
+                              <td>
+                                <span style={{ fontWeight: esHoy ? 'bold' : 'normal'}}>
+                                  {t.fecha}
+                                </span>
+                              </td>
+                              <td>
+                                <select 
+                                  value={t.estado} 
+                                  onChange={(e) => actualizarEstadoTurno(t.id, e.target.value)} 
+                                  style={selectEstadoStyle(t.estado)}
+                                >
+                                  <option value="Pendiente">Pendiente</option>
+                                  <option value="Confirmado">Confirmado</option>
+                                  <option value="Atendido">Atendido</option>
+                                  <option value="Cancelado">Cancelado</option>
+                                </select>
+                              </td>
+                              <td>
+                                <button 
+                                  onClick={() => enviarRecordatorio(t)} 
+                                  style={{ backgroundColor: '#25D366', color: 'white', border: 'none', padding: '5px', borderRadius: '5px', marginRight: '5px', cursor: 'pointer' }}
+                                >
+                                  📲 Avisar
+                                </button>
+                                <button 
+                                  onClick={() => eliminarTurno(t.id)} 
+                                  style={{ color: '#F44336', border: 'none', background: 'none', cursor: 'pointer' }}
+                                >
+                                  Borrar
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </section>
+                )}
+
+                {vista === 'pacientes' && (
+                  <section>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                      <h3>{idioma === 'es' ? 'Gestión de Pacientes' : 'Patient Management'}</h3>
+                      <input 
+                        placeholder="🔍 Buscar..." 
+                        style={{ ...inputStyle, width: '250px' }} 
+                        onChange={(e) => setBusquedaAdmin(e.target.value)} 
+                      />
+                    </div>
+
+                    {/* FORMULARIO MEJORADO CON ALERGIAS */}
+                    <form onSubmit={guardarPaciente} style={formStyle}>
+                      <input 
+                        placeholder={TEXTOS[idioma].nombre} 
+                        style={inputStyle} 
+                        value={nuevoPaciente.nombre} 
+                        onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, nombre: e.target.value })} 
+                        required 
+                      />
+                      <input 
+                        placeholder={TEXTOS[idioma].placeholderDni} 
+                        style={inputStyle} 
+                        value={nuevoPaciente.dni} 
+                        onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, dni: e.target.value })} 
+                        required 
+                      />
+      
+                      <div style={{ display: 'flex', gap: '5px' }}>
+                        <select 
+                          value={prefijo} 
+                          onChange={(e) => setPrefijo(e.target.value)}
+                          style={{ ...inputStyle, width: '80px', padding: '5px' }}
+                        >
+                          {CODIGOS_PAIS.map(p => (
+                            <option key={p.codigo} value={p.codigo}>{p.bandera} +{p.codigo}</option>
+                          ))}
+                        </select>
+                        <input 
+                          placeholder="WhatsApp" 
+                          style={{ ...inputStyle, flex: 1 }} 
+                          value={nuevoPaciente.telefono} 
+                          onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, telefono: e.target.value })} 
+                          required 
+                        />
                       </div>
+
+                      {/* CAMPO DE ALERGIAS (Punto clave) */}
+                      <input 
+                        placeholder={idioma === 'es' ? "Alergias / Advertencias" : "Allergies / Warnings"} 
+                        style={{ 
+                          ...inputStyle, 
+                          width: '100%', 
+                          border: nuevoPaciente.alergias ? '1px solid #ff4444' : 'none',
+                          backgroundColor: nuevoPaciente.alergias ? '#fff5f5' : '#fff' 
+                        }} 
+                        value={nuevoPaciente.alergias} 
+                        onChange={(e) => setNuevoPaciente({ ...nuevoPaciente, alergias: e.target.value })} 
+                      />
+
+                      <button 
+                        type="submit" 
+                        disabled={!esValido()} 
+                        style={{ ...btnLarge, backgroundColor: esValido() ? '#4CAF50' : '#555' }}
+                      >
+                        {nuevoPaciente.id 
+                          ? '💾 ' + (idioma === 'es' ? 'Actualizar' : 'Update') 
+                          : '➕ ' + (idioma === 'es' ? 'Añadir' : 'Add')}
+                      </button>
+      
+                      {nuevoPaciente.id && (
+                        <button 
+                          type="button" 
+                          onClick={() => setNuevoPaciente({ id: null, nombre: '', dni: '', telefono: '', alergias: '' })} 
+                          style={{ marginLeft: '10px', background: 'none', color: 'gray', border: 'none', cursor: 'pointer' }}
+                        >
+                          {TEXTOS[idioma].volver}
+                        </button>
+                      )}
+                    </form>
+
+                    <table border="1" style={tableStyle}>
+                      <thead>
+                        <tr>
+                          <th>{idioma === 'es' ? 'Nombre' : 'Name'}</th>
+                          <th>{TEXTOS[idioma].placeholderDni}</th>
+                          <th>{idioma === 'es' ? 'Acciones' : 'Actions'}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pacientes
+                          .filter(p => p.nombre.toLowerCase().includes(busquedaAdmin.toLowerCase()) || p.dni.includes(busquedaAdmin))
+                          .map(p => (
+                            <tr key={p.id}>
+                              <td style={{ padding: '10px' }}>{p.nombre}</td>
+                              <td>{p.dni}</td>
+                              <td>
+                                <button 
+                                  onClick={() => verHistoriaClinica(p)} 
+                                  style={{ color: '#2196F3', marginRight: '10px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}
+                                  title={idioma === 'es' ? "Ver Historia Clínica" : "View Medical History"}
+                                >
+                                  📄
+                                </button>
+                                <button onClick={() => setNuevoPaciente(p)} style={{ color: 'orange', marginRight: '10px', background: 'none', border: 'none', cursor: 'pointer' }}>✏️</button>
+                                <button onClick={() => eliminarPaciente(p.id)} style={{ color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}>🗑️</button>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </section>
+                )}
+
+                {vista === 'medicos' && (
+                  <section>
+                    {/* CABECERA Y BUSCADOR */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                      <h3 style={{ color: '#4CAF50' }}>👨‍⚕️ {idioma === 'es' ? 'Gestión de Médicos' : 'Doctor Management'}</h3>
+                      <input 
+                        placeholder="🔍 Buscar médico..." 
+                        style={{ ...inputStyle, width: '250px' }} 
+                        onChange={(e) => setBusquedaAdmin(e.target.value)} 
+                      />
+                    </div>
+
+                    {/* FORMULARIO DE CARGA (Aquí es donde cargas los nuevos) */}
+                    <div style={{ backgroundColor: '#2a2a2a', padding: '20px', borderRadius: '15px', marginBottom: '30px', border: '1px solid #444' }}>
+                      <h4 style={{ marginTop: 0 }}>{nuevoMedico.id ? '📝 Editar Médico' : '➕ Registrar Nuevo Médico'}</h4>
+                      <form onSubmit={guardarMedico} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                        <input 
+                          placeholder={idioma === 'es' ? "Nombre Completo" : "Full Name"} 
+                          style={inputStyle} 
+                          value={nuevoMedico.nombre} 
+                          onChange={(e) => setNuevoMedico({ ...nuevoMedico, nombre: e.target.value })} 
+                          required 
+                        />
+                        <input 
+                          placeholder={idioma === 'es' ? "Especialidad" : "Specialty"} 
+                          style={inputStyle} 
+                          value={nuevoMedico.especialidad} 
+                          onChange={(e) => setNuevoMedico({ ...nuevoMedico, especialidad: e.target.value })} 
+                          required 
+                        />
+                        <input 
+                          placeholder={idioma === 'es' ? "Matrícula" : "License Number"} 
+                          style={inputStyle} 
+                          value={nuevoMedico.matricula} 
+                          onChange={(e) => setNuevoMedico({ ...nuevoMedico, matricula: e.target.value })} 
+                          required 
+                        />
+                        <input 
+                          placeholder={idioma === 'es' ? "Consultorio / Piso" : "Office / Floor"} 
+                          style={inputStyle} 
+                          value={nuevoMedico.consultorio} 
+                          onChange={(e) => setNuevoMedico({ ...nuevoMedico, consultorio: e.target.value })} 
+                        />
+                        <input 
+                          placeholder={idioma === 'es' ? "Teléfono" : "Phone"} 
+                          style={inputStyle} 
+                          value={nuevoMedico.telefono} 
+                          onChange={(e) => setNuevoMedico({ ...nuevoMedico, telefono: e.target.value })} 
+                          required 
+                        />
+
+                        <div style={{ gridColumn: 'span 2', display: 'flex', gap: '10px' }}>
+                          <button type="submit" style={{ ...btnLarge, flex: 1 }}>
+                            {nuevoMedico.id ? '💾 ' + (idioma === 'es' ? 'Actualizar' : 'Update') : '🚀 ' + (idioma === 'es' ? 'Registrar' : 'Register')}
+                          </button>
+          
+                          {nuevoMedico.id && (
+                            <button 
+                              type="button" 
+                              onClick={() => setNuevoMedico({ id: null, nombre: '', especialidad: '', telefono: '', matricula: '', consultorio: '' })} 
+                              style={{ padding: '10px', background: '#444', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer' }}
+                            >
+                              {idioma === 'es' ? 'Cancelar' : 'Cancel'}
+                            </button>
+                          )}
+                        </div>
+                      </form>
+                    </div>
+
+                    {/* TABLA DE MÉDICOS EXISTENTES */}
+                    <table border="1" style={tableStyle}>
+                      <thead>
+                        <tr>
+                          <th>{idioma === 'es' ? 'Médico' : 'Doctor'}</th>
+                          <th>{idioma === 'es' ? 'Especialidad' : 'Specialty'}</th>
+                          <th>{idioma === 'es' ? 'Consultorio' : 'Office'}</th>
+                          <th>{idioma === 'es' ? 'Acciones' : 'Actions'}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {medicos
+                          .filter(m => m.nombre.toLowerCase().includes(busquedaAdmin.toLowerCase()))
+                          .map(m => (
+                            <tr key={m.id}>
+                              <td style={{ padding: '10px' }}>{m.nombre}</td>
+                              <td>{m.especialidad}</td>
+                              <td style={{ textAlign: 'center' }}>{m.consultorio || '--'}</td>
+                              <td>
+                                <button onClick={() => { setNuevoMedico(m); window.scrollTo(0,0); }} style={{ color: 'orange', marginRight: '10px', background: 'none', border: 'none', cursor: 'pointer' }}>✏️</button>
+                                <button onClick={() => eliminarMedico(m.id)} style={{ color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}>🗑️</button>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </section>
+                )}
+
+                {/* --- VISTA SALA DE ESPERA (MODO TV) --- */}
+                {/* --- BUSCÁ ESTA PARTE EN TU App.jsx --- */}
+                {vista === 'tv' && (
+                  <section style={{ backgroundColor: '#000', minHeight: '100vh', padding: '40px', textAlign: 'center', color: 'white' }}>
+                    <h2 style={{ color: '#4CAF50', fontSize: '50px', marginBottom: '40px' }}>SALA DE ESPERA</h2>
+    
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', fontSize: '35px' }}>
+                      <div style={{ borderBottom: '2px solid #444', color: '#aaa' }}>PACIENTE</div>
+                      <div style={{ borderBottom: '2px solid #444', color: '#aaa' }}>CONSULTORIO</div>
+
+                      {/* FILTRO FLEXIBLE: Solo por fecha de hoy */}
+                      {turnos
+                        .filter(t => {
+                          // 1. Limpiamos la fecha que viene de la base de datos (t.fecha)
+                          const fechaTurno = t.fecha ? t.fecha.split('T')[0] : "";
+                          // 2. Limpiamos la fecha de hoy
+                          const fechaHoy = hoy.split('T')[0];
+    
+                          // Solo mostramos si coinciden las fechas Y el estado es Confirmado o Atendido
+                          return fechaTurno === fechaHoy && (t.estado === 'Confirmado' || t.estado === 'Atendido');
+                        }) 
+                        .map(t => (
+                          <React.Fragment key={t.id}>
+                            <div style={{ padding: '25px', borderBottom: '2px solid #222', fontSize: '30px', fontWeight: 'bold' }}>
+                              {t.paciente} 
+                            </div>
+                            <div style={{ padding: '25px', borderBottom: '2px solid #222', color: '#4CAF50', fontSize: '30px', fontWeight: 'bold' }}>
+                              {t.consultorio || 'S/D'}
+                            </div>
+                          </React.Fragment>
+                        ))
+                      }
+                    </div>
+
+                    {/* AVISO SI NO HAY NADA (Para que no se vea negro total) */}
+                    {turnos.filter(t => t.fecha === hoy).length === 0 && (
+                      <div style={{ marginTop: '100px', color: '#444' }}>
+                        <h3>No hay turnos para la fecha: {hoy}</h3>
+                      </div>
+                    )}
+                  </section>
+                )}
+              </>
+            ) : (
+              <section style={{ maxWidth: '900px', margin: '0 auto' }}>
+                <h2>Hola, {pacienteEncontrado?.nombre}</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                  <div style={{ backgroundColor: '#2a2a2a', padding: '20px', borderRadius: '15px' }}>
+                    <h3>Agendar Turno</h3>
+                    <form onSubmit={guardarTurno} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                      <select onChange={e => setNuevoTurno({ ...nuevoTurno, medico_id: e.target.value })} required style={inputStyle}>
+                        <option value="">¿Con qué médico?</option>
+                        {medicos.map(m => (<option key={m.id} value={m.id} style={{ color: 'black' }}>{m.nombre} - {m.especialidad}</option>))}
+                      </select>
+                      <input type="date" min={hoy} onChange={e => setNuevoTurno({ ...nuevoTurno, fecha: e.target.value })} required style={inputStyle} />
+                      <input type="time" min="08:00" max="20:00" onChange={e => setNuevoTurno({ ...nuevoTurno, hora: e.target.value })} required style={inputStyle} />
+                      <input placeholder="Motivo" onChange={e => setNuevoTurno({ ...nuevoTurno, motivo: e.target.value })} required style={inputStyle} />
+                      <button type="submit" style={btnLarge}>Confirmar</button>
                     </form>
                   </div>
-
-                  {/* TABLA DE MÉDICOS EXISTENTES */}
-                  <table border="1" style={tableStyle}>
-                    <thead>
-                      <tr>
-                        <th>{idioma === 'es' ? 'Médico' : 'Doctor'}</th>
-                        <th>{idioma === 'es' ? 'Especialidad' : 'Specialty'}</th>
-                        <th>{idioma === 'es' ? 'Consultorio' : 'Office'}</th>
-                        <th>{idioma === 'es' ? 'Acciones' : 'Actions'}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {medicos
-                        .filter(m => m.nombre.toLowerCase().includes(busquedaAdmin.toLowerCase()))
-                        .map(m => (
-                          <tr key={m.id}>
-                            <td style={{ padding: '10px' }}>{m.nombre}</td>
-                            <td>{m.especialidad}</td>
-                            <td style={{ textAlign: 'center' }}>{m.consultorio || '--'}</td>
-                            <td>
-                              <button onClick={() => { setNuevoMedico(m); window.scrollTo(0,0); }} style={{ color: 'orange', marginRight: '10px', background: 'none', border: 'none', cursor: 'pointer' }}>✏️</button>
-                              <button onClick={() => eliminarMedico(m.id)} style={{ color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}>🗑️</button>
-                            </td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </section>
-              )}
-
-              {/* --- VISTA SALA DE ESPERA (MODO TV) --- */}
-              {/* --- BUSCÁ ESTA PARTE EN TU App.jsx --- */}
-              {vista === 'tv' && (
-                <section style={{ backgroundColor: '#000', minHeight: '100vh', padding: '40px', textAlign: 'center', color: 'white' }}>
-                  <h2 style={{ color: '#4CAF50', fontSize: '50px', marginBottom: '40px' }}>SALA DE ESPERA</h2>
-    
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', fontSize: '35px' }}>
-                    <div style={{ borderBottom: '2px solid #444', color: '#aaa' }}>PACIENTE</div>
-                    <div style={{ borderBottom: '2px solid #444', color: '#aaa' }}>CONSULTORIO</div>
-
-                    {/* FILTRO FLEXIBLE: Solo por fecha de hoy */}
-                    {turnos
-                      .filter(t => {
-                        // 1. Limpiamos la fecha que viene de la base de datos (t.fecha)
-                        const fechaTurno = t.fecha ? t.fecha.split('T')[0] : "";
-                        // 2. Limpiamos la fecha de hoy
-                        const fechaHoy = hoy.split('T')[0];
-    
-                        // Solo mostramos si coinciden las fechas Y el estado es Confirmado o Atendido
-                        return fechaTurno === fechaHoy && (t.estado === 'Confirmado' || t.estado === 'Atendido');
-                      }) 
-                      .map(t => (
-                        <React.Fragment key={t.id}>
-                          <div style={{ padding: '25px', borderBottom: '2px solid #222', fontSize: '30px', fontWeight: 'bold' }}>
-                            {t.paciente} 
-                          </div>
-                          <div style={{ padding: '25px', borderBottom: '2px solid #222', color: '#4CAF50', fontSize: '30px', fontWeight: 'bold' }}>
-                            {t.consultorio || 'S/D'}
-                          </div>
-                        </React.Fragment>
-                      ))
-                    }
+                  <div style={{ backgroundColor: '#2a2a2a', padding: '20px', borderRadius: '15px' }}>
+                    <h3>Mis Turnos</h3>
+                    {turnos.filter(t => Number(t.paciente_id) === Number(pacienteEncontrado?.id)).map(t => (
+                      <div key={t.id} style={{ borderLeft: '4px solid #4CAF50', padding: '10px', backgroundColor: '#333', marginBottom: '10px' }}>
+                        <p><b>{t.fecha} - {t.hora}hs</b></p>
+                        <p>
+                          Dr. {t.medico} 
+                          {t.consultorio && (
+                            <span style={{ color: '#4CAF50', marginLeft: '10px', fontSize: '14px' }}>
+                              📍 {idioma === 'es' ? 'Consultorio' : 'Office'}: {t.consultorio}
+                            </span>
+                          )}
+                        </p>
+                        <p style={{ fontSize: '12px', color: '#4CAF50', fontWeight: 'bold' }}>Estado: {t.estado || 'Pendiente'}</p>
+                      </div>
+                    ))}
                   </div>
-
-                  {/* AVISO SI NO HAY NADA (Para que no se vea negro total) */}
-                  {turnos.filter(t => t.fecha === hoy).length === 0 && (
-                    <div style={{ marginTop: '100px', color: '#444' }}>
-                      <h3>No hay turnos para la fecha: {hoy}</h3>
-                    </div>
-                  )}
-                </section>
-              )}
-            </>
-          ) : (
-            <section style={{ maxWidth: '900px', margin: '0 auto' }}>
-              <h2>Hola, {pacienteEncontrado?.nombre}</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-                <div style={{ backgroundColor: '#2a2a2a', padding: '20px', borderRadius: '15px' }}>
-                  <h3>Agendar Turno</h3>
-                  <form onSubmit={guardarTurno} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                    <select onChange={e => setNuevoTurno({ ...nuevoTurno, medico_id: e.target.value })} required style={inputStyle}>
-                      <option value="">¿Con qué médico?</option>
-                      {medicos.map(m => (<option key={m.id} value={m.id} style={{ color: 'black' }}>{m.nombre} - {m.especialidad}</option>))}
-                    </select>
-                    <input type="date" min={hoy} onChange={e => setNuevoTurno({ ...nuevoTurno, fecha: e.target.value })} required style={inputStyle} />
-                    <input type="time" min="08:00" max="20:00" onChange={e => setNuevoTurno({ ...nuevoTurno, hora: e.target.value })} required style={inputStyle} />
-                    <input placeholder="Motivo" onChange={e => setNuevoTurno({ ...nuevoTurno, motivo: e.target.value })} required style={inputStyle} />
-                    <button type="submit" style={btnLarge}>Confirmar</button>
-                  </form>
                 </div>
-                <div style={{ backgroundColor: '#2a2a2a', padding: '20px', borderRadius: '15px' }}>
-                  <h3>Mis Turnos</h3>
-                  {turnos.filter(t => Number(t.paciente_id) === Number(pacienteEncontrado?.id)).map(t => (
-                    <div key={t.id} style={{ borderLeft: '4px solid #4CAF50', padding: '10px', backgroundColor: '#333', marginBottom: '10px' }}>
-                      <p><b>{t.fecha} - {t.hora}hs</b></p>
-                      <p>
-                        Dr. {t.medico} 
-                        {t.consultorio && (
-                          <span style={{ color: '#4CAF50', marginLeft: '10px', fontSize: '14px' }}>
-                            📍 {idioma === 'es' ? 'Consultorio' : 'Office'}: {t.consultorio}
-                          </span>
-                        )}
-                      </p>
-                      <p style={{ fontSize: '12px', color: '#4CAF50', fontWeight: 'bold' }}>Estado: {t.estado || 'Pendiente'}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </section>
-          )}
-        </div>
-      )}
-    </div>
+              </section>
+            )}
+          </div>
+        )}
+      </div>
+    </>
   )
 }
 
-// Estilos 
-const btnLarge = { padding: '15px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' };
-const inputStyle = { padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: '#fff', color: '#000' };
-const btnTab = (active) => ({ padding: '10px 20px', cursor: 'pointer', backgroundColor: active ? '#4CAF50' : '#333', color: 'white', border: 'none', marginRight: '5px', borderRadius: '5px' });
-const tableStyle = { width: '100%', borderCollapse: 'collapse', textAlign: 'left', backgroundColor: '#333' };
-const formStyle = { display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' };
-const cardStyle = { backgroundColor: '#2a2a2a', padding: '15px', borderRadius: '10px', textAlign: 'center', flex: '1' };
-const selectEstadoStyle = (estado) => ({ 
-  padding: '6px 10px',
-  borderRadius: '20px', 
-  border: 'none',
-  fontSize: '12px',
-  fontWeight: 'bold',
-  cursor: 'pointer',
-  color: 'white',
-  backgroundColor: 
-    estado === 'Confirmado' ? '#2e7d32' :
-    estado === 'Atendido' ? '#1565c0' : 
-    estado === 'Cancelado' ? '#c62828' : 
-    '#666'
-  });
+
 
 export default App;
